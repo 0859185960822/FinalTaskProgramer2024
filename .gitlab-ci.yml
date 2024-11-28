@@ -1,0 +1,37 @@
+before_script:
+  - echo "Before script section"
+  - echo "For example you might run an update here or install a build dependency"
+  - echo "Or perhaps you might print out some debugging details"
+  - git checkout "$CI_COMMIT_REF_NAME"
+  - git pull
+
+after_script:
+  - echo "After script section"
+  - echo "For example you might do some cleanup here"
+  - cd ../ && rm -rf sop-backend-v4
+variables:
+  GIT_STRATEGY: fetch
+deploy_dev:
+  stage: deploy
+  only:
+   - development
+  tags:
+   - dev
+  script:
+    #exclude storage directory
+    # - git sparse-checkout set --no-cone "/*" "!storage/*"
+    - >
+     if [ -d "$working_directory/sop-backend-v4" ]; then
+         echo "Repositories sudah pernah di clone!"
+        #  git sparse-checkout set --no-cone "/*" "!storage/*"
+         pwd && ls -al
+         git --work-tree="$working_directory/sop-backend-v4" checkout -f "$CI_COMMIT_REF_NAME"
+         pwd && ls -al
+         docker exec multiple-backend bash -c 'cd sop-backend-v4 && cp .env.example .env && composer i --no-dev && composer update && chown -R www-data storage && php artisan storage:link && php artisan config:clear && php artisan key:generate'
+     else
+         echo "Repo tidak ada"
+         pwd
+         cd ../
+         sudo mv sop-backend-v4/ $working_directory
+     fi
+    - echo "Sukses"
