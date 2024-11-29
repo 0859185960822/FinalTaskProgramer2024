@@ -23,8 +23,8 @@ return new class extends Migration
             $table->string('task_name');
             $table->text('description');
             $table->timestamps();
-            $table->integer('created_by');
-            $table->integer('updated_by');
+            $table->integer('created_by')->nullable(true);
+            $table->integer('updated_by')->nullable(true);
             $table->softDeletes();
         });
     }

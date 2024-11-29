@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1\Admin;
 
+use App\Http\Resources\projectResource;
 use Exception;
 use Carbon\Carbon;
 use App\Models\Projects;
@@ -17,6 +18,16 @@ class ProjectController extends Controller
      */
     public function index()
     {
+        try {
+            $project = Projects::with(['projectManager', 'teamMembers'])->get();
+
+            return ResponseFormatter::success(projectResource::collection($project), 'Success Get Data');
+        } catch (Exception $e) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $e,
+            ], 'Failed to process data', 500);
+        }
         
     }
 
