@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\V1\Admin\ProjectController;
 use App\Http\Controllers\API\V1\ConfigController;
 use App\Http\Controllers\API\V1\MenuController;
 use App\Http\Controllers\API\V1\ReferenceController;
@@ -70,5 +71,9 @@ Route::prefix('v1')->group(function () {
     Route::prefix('reference')->group(function () {
         Route::get('/get-role-option', [ReferenceController::class, 'getRoleOption'])->middleware(['auth.api']);
         Route::get('/get-menu-access', [ReferenceController::class, 'getMenuAccess'])->middleware(['auth.api']);
+    });
+
+    Route::prefix('admin')->group(function (){
+        Route::get('/', [ProjectController::class, 'index'])->middleware(['auth.api']);
     });
 });
