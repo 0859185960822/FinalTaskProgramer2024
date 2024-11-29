@@ -52,14 +52,15 @@ class ProjectController extends Controller
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'pm_id' => $request->pm_id,
-                // 'created_by' => auth()->user()->id,
+                'created_by' => $request->created_by,   
+                'updated_by' => $request->created_by,   
                 'created_at' => Carbon::now(),
             ];
             Projects::create($data);
 
             return ResponseFormatter::success([
-               'message' => 'Success Create Data', 
-            ]);
+               $data, 
+            ],'Success Create Data');
         } catch (Exception $error) {
             return ResponseFormatter::error([
                 'message' => 'Something went wrong',
@@ -87,16 +88,61 @@ class ProjectController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request)
     {
-        //
+        try {
+            $validator = Validator::make($request->all(), [
+                'description' => 'required',
+                'start_date' => 'required',
+                'end_date' => 'required',
+                'pm_id' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return ResponseFormatter::error([
+                    'error' => $validator->errors()->all(),
+                ], 'validation failed', 402);
+            }
+
+            $data = Projects::where('project_id', $request->id)->first();
+            if ($data){
+                $dataUpdate = [
+                    'description' => $request->description,
+                    'start_date' => $request->start_date,
+                    'end_date' => $request->end_date,
+                    'pm_id' => $request->pm_id,
+                    'created_by' => $request->created_by,   
+                    'updated_by' => $request->created_by,   
+                    'updated_at' => Carbon::now(),
+                ];
+                $data->update($dataUpdate);
+
+                return ResponseFormatter::success([
+                $dataUpdate, 
+                ],'Success Update Data');
+            } else {
+                return ResponseFormatter::error([],'Data Not Found', 404);
+            }
+        } catch (Exception $error) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $error,
+            ], 'Failed to process data', 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        $project = Projects::find($id);
+
+        if ($project) {
+            $project->delete(); // Melakukan soft delete
+            return ResponseFormatter::success(null, 'Project soft deleted successfully');
+        } else {
+            return ResponseFormatter::error([], 'Project not found', 404);
+        }
     }
 }
