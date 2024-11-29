@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('projects', function (Blueprint $table) {
             $table->id('project_id');
+            $table->string('project_name');
             $table->text('description');
             $table->date('start_date');
             $table->date('end_date');
 
             $table->bigInteger('pm_id');
             $table->foreign('pm_id')->references('user_id')->on('users')->onDelete('cascade');
-            $table->integer('created_by')->nullable(false);
-            $table->integer('updated_by')->nullable(false);
+            $table->integer('created_by')->nullable(true);
+            $table->integer('updated_by')->nullable(true);
             $table->timestamps();
             $table->softDeletes();
         });

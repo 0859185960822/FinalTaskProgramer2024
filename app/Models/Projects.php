@@ -11,6 +11,7 @@ class Projects extends Model
     use HasFactory,SoftDeletes;
     
     protected $primaryKey = 'project_id';
+    protected $table = 'projects';
     protected $fillable = [
         'project_id',
         'description',
@@ -23,4 +24,14 @@ class Projects extends Model
         'updated_at',
         'deleted_at'
     ];
+
+    public function projectManager()
+    {
+        return $this->hasOne(User::class,'user_id', 'pm_id');
+    }
+
+    public function teamMembers()
+    {
+    return $this->belongsToMany(User::class, 'users_has_teams', 'project_id', 'user_id');
+    }
 }
