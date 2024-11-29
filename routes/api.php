@@ -8,9 +8,8 @@ use App\Http\Controllers\API\V1\ConfigController;
 use App\Http\Controllers\API\V1\MenuController;
 use App\Http\Controllers\API\V1\RoleController;
 use App\Http\Controllers\API\V1\UserController;
-use App\Http\Controllers\API\V1\ConfigController;
 use App\Http\Controllers\API\V1\ReferenceController;
-use App\Http\Controllers\API\V1\Admin\ProjectController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -78,8 +77,7 @@ Route::prefix('v1')->group(function () {
     Route::prefix('admin')->group(function () {
         Route::post('/', [ProjectController::class, 'store'])->middleware(['auth.api']);
         Route::get('/', [ProjectController::class, 'index'])->middleware(['auth.api']);
-        Route::post('/', [ProjectController::class, 'update'])->middleware(['auth.api']);
+        Route::put('/', [ProjectController::class, 'update'])->middleware(['auth.api']);
         Route::delete('/{id}', [ProjectController::class, 'destroy'])->middleware(['auth.api']);
-        Route::get('/get-menu-access', [ReferenceController::class, 'getMenuAccess'])->middleware(['auth.api']);
     });
 });

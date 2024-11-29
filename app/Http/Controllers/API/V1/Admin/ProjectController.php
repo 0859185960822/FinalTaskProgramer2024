@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1\Admin;
 
 use App\Http\Resources\projectResource;
+use App\Models\UsersHasTeam;
 use Exception;
 use Carbon\Carbon;
 use App\Models\Projects;
@@ -67,7 +68,16 @@ class ProjectController extends Controller
                 'updated_by' => $request->created_by,   
                 'created_at' => Carbon::now(),
             ];
-            Projects::create($data);
+           $project = Projects::create($data);
+
+            if ($request->collaborator){
+                foreach ($request->collaborator as $collaborators) {
+                    UsersHasTeam::create([
+                       'user_id' => $request->collaborators,
+                       'project_id' => $project->project_id,
+                    ]);
+                }
+            }
 
             return ResponseFormatter::success([
                $data, 
