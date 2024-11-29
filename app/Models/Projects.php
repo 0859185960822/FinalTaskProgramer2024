@@ -11,4 +11,16 @@ class Projects extends Model
     use HasFactory,SoftDeletes;
     
     protected $primaryKey = 'project_id';
+    protected $fillable = [
+        'project_id',
+        'description',
+        'start_date',
+        'end_date',
+        'pm_id',
+        'created_by',
+        'updated_by',
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ];
 }
