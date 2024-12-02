@@ -80,5 +80,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/{id}', [ProjectController::class, 'show'])->middleware(['auth.api']);
         Route::put('/', [ProjectController::class, 'update'])->middleware(['auth.api']);
         Route::delete('/{id}', [ProjectController::class, 'destroy'])->middleware(['auth.api']);
+        Route::post('/add-collaborator', [ProjectController::class, 'addCollaborator'])->middleware(['auth.api']);
     });
 });
