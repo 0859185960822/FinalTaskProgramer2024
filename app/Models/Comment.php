@@ -8,4 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Comment extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'comment_id';
+    protected $table = 'comments';
+    public $incrementing = true;
 }

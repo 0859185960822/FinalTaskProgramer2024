@@ -21,7 +21,9 @@ return new class extends Migration
             $table->foreign('collaborator_id')->references('user_id')->on('users')->onDelete('cascade');
 
             $table->string('task_name');
-            $table->text('description');
+            $table->enum('priority_task',[1,2,3])->default(1);
+            $table->enum('type_task',['MAJOR','MINOR']);
+            $table->enum('status_task', ['PENDING', 'IN PROGRESS', 'DONE'])->default('PENDING');
             $table->timestamps();
             $table->integer('created_by')->nullable(true);
             $table->integer('updated_by')->nullable(true);

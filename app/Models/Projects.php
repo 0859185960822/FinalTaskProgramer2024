@@ -12,11 +12,12 @@ class Projects extends Model
     
     protected $primaryKey = 'project_id';
     protected $table = 'projects';
+    public $incrementing = true;
     protected $fillable = [
         'project_id',
+        'project_name',
         'description',
-        'start_date',
-        'end_date',
+        'deadline',
         'pm_id',
         'created_by',
         'updated_by',
@@ -32,6 +33,11 @@ class Projects extends Model
 
     public function teamMembers()
     {
-    return $this->belongsToMany(User::class, 'users_has_teams', 'project_id', 'user_id');
+    return $this->belongsToMany(User::class, 'users_has_teams', 'project_id', 'user_id')->withTimestamps();
+    }
+
+    public function task()
+    {
+        return $this->hasMany(Tasks::class, 'project_id', 'project_id');
     }
 }

@@ -15,8 +15,7 @@ return new class extends Migration
             $table->id('project_id');
             $table->string('project_name');
             $table->text('description');
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->date('deadline');
 
             $table->bigInteger('pm_id');
             $table->foreign('pm_id')->references('user_id')->on('users')->onDelete('cascade');

@@ -11,4 +11,13 @@ class Tasks extends Model
     use HasFactory, SoftDeletes;
 
     protected $primaryKey = 'task_id';
+
+    protected $guarded = [];
+
+    public $incrementing = true;
+
+    public function project()
+    {
+        return $this->belongsTo(Projects::class);
+    }
 }
