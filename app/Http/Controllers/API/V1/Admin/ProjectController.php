@@ -77,6 +77,7 @@ class ProjectController extends Controller
                 $dataToInsert[] = [
                     'user_id' => $collaborators->user_id,
                     'project_id' => $project_id,              
+                    'created_at' => now(),              
                 ];
             }
             UsersHasTeam::insert($dataToInsert); // Mass insert
