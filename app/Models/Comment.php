@@ -11,4 +11,5 @@ class Comment extends Model
     protected $primaryKey = 'comment_id';
     protected $table = 'comments';
     public $incrementing = true;
+    public $timestamps = true;
 }

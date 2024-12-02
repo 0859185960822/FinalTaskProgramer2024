@@ -78,6 +78,7 @@ class ProjectController extends Controller
                 $dataToInsert[] = [
                     'user_id' => $collaborators->user_id,
                     'project_id' => $project_id,              
+                    'created_at' => now(),              
                 ];
             }
             UsersHasTeam::insert($dataToInsert); // Mass insert
@@ -137,7 +138,7 @@ class ProjectController extends Controller
                 ], 'validation failed', 402);
             }
 
-            $data = Projects::where('project_id', $request->id)->first();
+            $data = Projects::where('project_id', $request->project_id)->first();
             if ($data){
                 $dataUpdate = [
                     'project_name' => $request->project_name,
@@ -150,8 +151,7 @@ class ProjectController extends Controller
                 // dd($data);
                 // Update kolaborator jika ada data collaborator
                 $project_id = $data->project_id;
-                $data_collaborator = json_decode($request->collaborator,true);
-                // dd($project_id);
+                $data_collaborator = json_decode($request->collaborator, true);
 
                 if ($data_collaborator) {
                     // Hapus kolaborator lama
