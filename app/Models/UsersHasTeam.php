@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class UsersHasTeam extends Model
 {
     use HasFactory;
+    public $timestamps = true;
     protected $fillable = [
         'user_id',
         'project_id',

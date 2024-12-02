@@ -136,7 +136,7 @@ class ProjectController extends Controller
                 ], 'validation failed', 402);
             }
 
-            $data = Projects::where('project_id', $request->id)->first();
+            $data = Projects::where('project_id', $request->project_id)->first();
             if ($data){
                 $dataUpdate = [
                     'project_name' => $request->project_name,
@@ -149,7 +149,7 @@ class ProjectController extends Controller
 
                 // Update kolaborator jika ada data collaborator
                 $project_id = $data->project_id;
-                $data_collaborator = json_decode($request->collaborator);
+                $data_collaborator = json_decode($request->collaborator, true);
 
                 if ($data_collaborator) {
                     // Hapus kolaborator lama
