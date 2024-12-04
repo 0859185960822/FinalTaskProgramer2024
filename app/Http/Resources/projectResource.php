@@ -17,18 +17,27 @@ class projectResource extends JsonResource
     public function toArray(Request $request): array
     {
         $sisa_waktu = Carbon::now()->diffInDays(Carbon::parse($this->deadline), false) +1;
-        // dd($sisa_waktu);
+        
         if($sisa_waktu === 1){
             $sisa_waktu = 'Hari Deadline';
         } elseif ($sisa_waktu <= 0) {
             $sisa_waktu = 'Deadline Terlewat';
         }
+
+        // Format deadline dengan nama bulan
+        $formattedDeadline = Carbon::parse($this->deadline)->translatedFormat('d F Y');
+
+        // Hitung progress_project
+        $totalTasks = $this->task ? $this->task->count() : 0;
+        $doneTasks = $this->task ? $this->task->where('status_task', 'DONE')->count() : 0;
+
+        $progress_project = $totalTasks > 0 ? round(($doneTasks / $totalTasks) * 100, 2) : 0;
         
         return [
             'project_id' => $this->project_id,
             'project_name' => $this->project_name,
             'description' => $this->description,
-            'deadline' => $this->deadline,
+            'deadline' => $formattedDeadline,
             'pm_id' => $this->whenLoaded('projectManager', function () {
                 return [
                     'user_id' => $this->projectManager->user_id,
@@ -57,6 +66,7 @@ class projectResource extends JsonResource
                 });
             }),
             'sisa_waktu' => $sisa_waktu,
+            'progress_project' => $progress_project . '%',
         ];
     }
 }

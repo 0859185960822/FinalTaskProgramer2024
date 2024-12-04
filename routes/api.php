@@ -82,4 +82,6 @@ Route::prefix('v1')->group(function () {
         Route::delete('/{id}', [ProjectController::class, 'destroy'])->middleware(['auth.api']);
         Route::post('/add-collaborator', [ProjectController::class, 'addCollaborator'])->middleware(['auth.api']);
     });
+    Route::get('/project-management', [ProjectController::class, 'projectManagement'])->middleware(['auth.api']);
+    Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api']);
 });
