@@ -171,7 +171,7 @@ class ProjectController extends Controller
                     'updated_by' => Auth::user()->user_id,   
                 ];
                 $data->update($dataUpdate);
-                // dd($data);
+                
                 // Update kolaborator jika ada data collaborator
                 $project_id = $data->project_id;
                 $data_collaborator = json_decode($request->collaborator, true);
