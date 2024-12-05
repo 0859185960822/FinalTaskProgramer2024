@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Validator;
 class UserController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * User.Index
+     *
+     * @response User<UserResource>
      */
     public function index(Request $request)
     {

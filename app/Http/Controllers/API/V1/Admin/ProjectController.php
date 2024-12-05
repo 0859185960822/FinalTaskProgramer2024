@@ -2,30 +2,54 @@
 
 namespace App\Http\Controllers\API\V1\Admin;
 
-use App\Http\Resources\projectResource;
-use App\Http\Resources\ProjectResourceById;
-use App\Models\UsersHasTeam;
+
 use Exception;
 use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Projects;
+use App\Models\UsersHasTeam;
 use Illuminate\Http\Request;
 use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\projectResource;
 use Illuminate\Support\Facades\Validator;
+
 
 class ProjectController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Project.Index
+     *
+     * @response array{data: ProjectResource[], meta: array{permissions: bool}}
      */
     public function index()
     {
         try {
-            $project = Projects::with(['projectManager', 'teamMembers'])->get();
+            $project = Projects::with(['projectManager', 'teamMembers'])
+                        ->where('pm_id',Auth::user()->user_id)
+                        ->get();
+            // dd($project);
+            $totalProject = $project->count();
+            $onGoing = 0;
+            $done = 0;
 
-            return ResponseFormatter::success(projectResource::collection($project), 'Success Get Data');
+            foreach ($project as $proyek) {
+                $totalTasks = $proyek->task->count();
+                $doneTasks = $proyek->task->where('status_task', 'DONE')->count();
+
+                if ($totalTasks > 0 && $doneTasks === $totalTasks) {
+                    $done++;
+                } else {
+                    $onGoing++;
+                }
+            }
+            return ResponseFormatter::success([
+                'total_project' => $totalProject,
+                'project_on_going' => $onGoing,
+                'project_done' => $done,
+                'data_project'=>projectResource::collection($project),
+            ], 'Success Get Data');
         } catch (Exception $e) {
             return ResponseFormatter::error([
                 'message' => 'Something went wrong',
@@ -44,7 +68,7 @@ class ProjectController extends Controller
     // }
 
     /**
-     * Store a newly created resource in storage.
+     * Project.Store
      */
     public function store(Request $request)
     {
@@ -96,7 +120,7 @@ class ProjectController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Project.Detail
      */
     public function show(string $id)
     {
@@ -121,7 +145,7 @@ class ProjectController extends Controller
     // }
 
     /**
-     * Update the specified resource in storage.
+     * Project.Update
      */
     public function update(Request $request)
     {
@@ -183,7 +207,7 @@ class ProjectController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Project.Delete
      */
     public function destroy($id)
     {
@@ -232,6 +256,84 @@ class ProjectController extends Controller
             'message' => 'Collaborator berhasil ditambahkan ke project.',
             'added_user' => $newCollaborator,
         ], 201);
+    }
+
+    public function projectManagement(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 5);
+
+            // Validasi perPage
+            $perPageOptions = [5, 10, 15, 20, 50];
+            if (!in_array($perPage, $perPageOptions)) {
+                $perPage = 5;
+            }
+
+            $user_id = auth()->user()->user_id;
+            
+            // Query awal untuk memfilter berdasarkan PM ID
+            $query = Projects::where('pm_id', $user_id);
+
+            // Eksekusi query
+            $project = $query->latest()->paginate($perPage);
+
+            // Cek jika data kosong
+            if ($project->isEmpty()) {
+                return ResponseFormatter::error([], 'Project not found', 404);
+            }
+
+            // Return response
+            return ResponseFormatter::success(projectResource::collection($project), 'Success Get Data');
+        } catch (Exception $error) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $error->getMessage(),
+            ], 'Failed to process data', 500);
+        }
+    }
+
+    public function SearchProjectManagement(Request $request)
+    {
+        // Ambil parameter pencarian global dari request
+        $search = $request->input('search'); // Input pencarian global
+        $user_id = auth()->user()->user_id;
+
+        // Query awal untuk memfilter berdasarkan PM ID
+        $query = Projects::where(function ($subQuery) use ($user_id, $search) {
+            $subQuery->where('pm_id', $user_id)
+                ->where(function ($innerQuery) use ($search) {
+                    $innerQuery->where('project_name', 'LIKE', "%{$search}%")
+                        ->orWhere('description', 'LIKE', "%{$search}%");
+
+                    // Validasi jika input berupa tanggal yang valid
+                    if ($this->isValidDate($search)) {
+                        $innerQuery->orWhereDate('deadline', Carbon::parse($search)->toDateString());
+                    }
+                    // // Filter berdasarkan hari sebelum deadline jika input adalah angka
+                    // if (is_numeric($search)) {
+                    //     $innerQuery->orWhereRaw(
+                    //         "EXTRACT(DAY FROM (deadline - CURRENT_DATE)) = ?",
+                    //         [$search]
+                    //     );
+                    // }
+                });
+        });
+
+        // Eksekusi query
+        $project = $query->get();
+
+        // Cek jika data kosong
+        if ($project->isEmpty()) {
+            return ResponseFormatter::error([], 'Project not found', 404);
+        }
+
+        // Return response
+        return ResponseFormatter::success(projectResource::collection($project), 'Success Get Data');
+    }
+
+    private function isValidDate($date)
+    {
+        return strtotime($date) !== false;
     }
 
 
