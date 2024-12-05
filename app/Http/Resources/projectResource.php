@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Projects;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+    /**
+     * @mixin Projects
+     */
 class projectResource extends JsonResource
 {
     /**
@@ -38,33 +41,32 @@ class projectResource extends JsonResource
             'project_name' => $this->project_name,
             'description' => $this->description,
             'deadline' => $formattedDeadline,
-            'pm_id' => $this->whenLoaded('projectManager', function () {
-                return [
+            'pm_id' => [
                     'user_id' => $this->projectManager->user_id,
                     'name' => $this->projectManager->name,
-                ];
-            }),
-            'collaborator' => $this->whenLoaded('teamMembers', function () {
-                return $this->teamMembers->map(function ($member) {
-                    return [
-                        'user_id' => $member->user_id,
-                        'name' => $member->name,
-                        'username' => $member->username, // Contoh tambahan atribut
-                    ];
-                });
-            }),
-            'task' => $this->whenLoaded('task', function () {
-                return $this->task->map(function ($task) { // Ubah sesuai format map()
-                    return [
-                        'task_id' => $task->task_id,
-                        'project_id' => $task->project_id,
-                        'collaborator_id' => $task->collaborator_id,
-                        'task_name' => $task->task_name,
-                        'status_task' => $task->status_task,
-                        // 'created_at' =>
-                    ];
-                });
-            }),
+            ],
+            // 'collaborator' => $this->whenLoaded('teamMembers', function () {
+            //     return $this->teamMembers->map(function ($member) {
+            //         return [
+            //             'user_id' => $member->user_id,
+            //             'name' => $member->name,
+            //             'username' => $member->username, // Contoh tambahan atribut
+            //         ];
+            //     });
+            // }),
+            'collaborator' => UserResource::collection($this->whenLoaded('teamMembers')),
+            // 'task' => $this->whenLoaded('task', function () {
+            //     return $this->task->map(function ($task) { // Ubah sesuai format map()
+            //         return [
+            //             'task_id' => $task->task_id,
+            //             'project_id' => $task->project_id,
+            //             'collaborator_id' => $task->collaborator_id,
+            //             'task_name' => $task->task_name,
+            //             'status_task' => $task->status_task,
+            //         ];
+            //     });
+            // }),
+            'task' => TaskResource::collection($this->whenLoaded('task')),
             'sisa_waktu' => $sisa_waktu,
             'progress_project' => $progress_project . '%',
         ];

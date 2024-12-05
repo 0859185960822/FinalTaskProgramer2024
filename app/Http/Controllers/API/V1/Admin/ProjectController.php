@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\API\V1\Admin;
 
-use DB;
+
 use Exception;
 use Carbon\Carbon;
 use App\Models\User;
@@ -14,13 +14,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\projectResource;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Resources\ProjectResourceById;
-use Illuminate\Support\Facades\DB as FacadesDB;
+
 
 class ProjectController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Project.Index
+     *
+     * @response Projects<ProjectResource>
      */
     public function index()
     {
@@ -28,7 +29,7 @@ class ProjectController extends Controller
             $project = Projects::with(['projectManager', 'teamMembers'])
                         ->where('pm_id',Auth::user()->user_id)
                         ->get();
-
+            // dd($project);
             $totalProject = $project->count();
             $onGoing = 0;
             $done = 0;
@@ -67,7 +68,7 @@ class ProjectController extends Controller
     // }
 
     /**
-     * Store a newly created resource in storage.
+     * Project.Store
      */
     public function store(Request $request)
     {
@@ -119,7 +120,7 @@ class ProjectController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Project.Detail
      */
     public function show(string $id)
     {
@@ -144,7 +145,7 @@ class ProjectController extends Controller
     // }
 
     /**
-     * Update the specified resource in storage.
+     * Project.Update
      */
     public function update(Request $request)
     {
@@ -206,7 +207,7 @@ class ProjectController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Project.Delete
      */
     public function destroy($id)
     {

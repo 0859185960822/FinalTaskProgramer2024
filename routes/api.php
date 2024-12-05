@@ -75,13 +75,13 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('admin')->group(function () {
-        Route::post('/', [ProjectController::class, 'store'])->middleware(['auth.api']);
-        Route::get('/', [ProjectController::class, 'index'])->middleware(['auth.api']);
-        Route::get('/{id}', [ProjectController::class, 'show'])->middleware(['auth.api']);
-        Route::put('/', [ProjectController::class, 'update'])->middleware(['auth.api']);
-        Route::delete('/{id}', [ProjectController::class, 'destroy'])->middleware(['auth.api']);
-        Route::post('/add-collaborator', [ProjectController::class, 'addCollaborator'])->middleware(['auth.api']);
+        Route::post('/', [ProjectController::class, 'store'])->middleware(['auth.api'])->name('project.store');
+        Route::get('/', [ProjectController::class, 'index'])->middleware(['auth.api'])->name('project.index');
+        Route::get('/{id}', [ProjectController::class, 'show'])->middleware(['auth.api'])->name('project.detail');
+        Route::put('/', [ProjectController::class, 'update'])->middleware(['auth.api'])->name('project.update');
+        Route::delete('/{id}', [ProjectController::class, 'destroy'])->middleware(['auth.api'])->name('project.delete');
+        Route::post('/add-collaborator', [ProjectController::class, 'addCollaborator'])->middleware(['auth.api'])->name('project.addCollaborator');
     });
-    Route::get('/project-management', [ProjectController::class, 'projectManagement'])->middleware(['auth.api']);
-    Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api']);
+    Route::get('/project-management', [ProjectController::class, 'projectManagement'])->middleware(['auth.api'])->name('projectManagement');
+    Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api'])->name('projectManagement.search');
 });
