@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\API\V1\Admin\ProjectController;
+use App\Http\Controllers\API\V1\Admin\TasksController;
 use App\Http\Controllers\API\V1\ConfigController;
 use App\Http\Controllers\API\V1\MenuController;
 use App\Http\Controllers\API\V1\RoleController;
@@ -75,6 +76,11 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('admin')->group(function () {
+        Route::post('/tasks', [TasksController::class, 'store'])->middleware('auth.api');
+        Route::get('/tasks', [TasksController::class, 'getCollaborators'])->middleware('auth.api');
+        Route::get('/tasks/{id}', [TasksController::class, 'show'])->middleware('auth.api');
+        Route::put('/tasks/{task_id}', [TasksController::class, 'edit'])->middleware('auth.api');
+        Route::delete('/tasks/{id}', [TasksController::class, 'destroy'])->middleware('auth.api');
         Route::post('/', [ProjectController::class, 'store'])->middleware(['auth.api']);
         Route::get('/', [ProjectController::class, 'index'])->middleware(['auth.api']);
         Route::get('/{id}', [ProjectController::class, 'show'])->middleware(['auth.api']);
