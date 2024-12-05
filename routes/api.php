@@ -77,11 +77,6 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('admin')->group(function () {
-        Route::post('/tasks', [TasksController::class, 'store'])->middleware('auth.api');
-        Route::get('/tasks', [TasksController::class, 'getCollaborators'])->middleware('auth.api');
-        Route::get('/tasks/{id}', [TasksController::class, 'show'])->middleware('auth.api');
-        Route::put('/tasks/{task_id}', [TasksController::class, 'edit'])->middleware('auth.api');
-        Route::delete('/tasks/{id}', [TasksController::class, 'destroy'])->middleware('auth.api');
         Route::post('/', [ProjectController::class, 'store'])->middleware(['auth.api']);
         Route::get('/', [ProjectController::class, 'index'])->middleware(['auth.api']);
         Route::get('/{id}', [ProjectController::class, 'show'])->middleware(['auth.api']);
@@ -92,8 +87,13 @@ Route::prefix('v1')->group(function () {
     Route::get('/project-management', [ProjectController::class, 'projectManagement'])->middleware(['auth.api'])->name('projectManagement');
     Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api'])->name('projectManagement.search');
 
-    Route::prefix('comment')->group(function () {
-        Route::post('/', [CommentController::class, 'store'])->middleware(['auth.api'])->name('getComment');
-        Route::get('/{id}', [CommentController::class, 'index'])->middleware(['auth.api'])->name('addComment');
+    Route::prefix('tasks')->group(function () {
+        Route::post('/', [TasksController::class, 'store'])->middleware('auth.api');
+        Route::get('/', [TasksController::class, 'getCollaborators'])->middleware('auth.api');
+        Route::get('/{id}', [TasksController::class, 'show'])->middleware('auth.api');
+        Route::put('/{task_id}', [TasksController::class, 'edit'])->middleware('auth.api');
+        Route::delete('/{id}', [TasksController::class, 'destroy'])->middleware('auth.api');
+        Route::post('/comment', [CommentController::class, 'store'])->middleware(['auth.api'])->name('getComment');
+        Route::get('/{id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('addComment');
     });
 });
