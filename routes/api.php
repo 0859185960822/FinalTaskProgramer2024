@@ -9,9 +9,7 @@ use App\Http\Controllers\API\V1\ConfigController;
 use App\Http\Controllers\API\V1\MenuController;
 use App\Http\Controllers\API\V1\RoleController;
 use App\Http\Controllers\API\V1\UserController;
-use App\Http\Controllers\API\V1\ConfigController;
 use App\Http\Controllers\API\V1\ReferenceController;
-use App\Http\Controllers\API\V1\Admin\ProjectController;
 use App\Http\Controllers\API\V1\Admin\Master\CommentController;
 
 
