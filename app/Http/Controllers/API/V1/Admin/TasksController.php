@@ -104,6 +104,40 @@ class TasksController extends Controller
                 'data' => null
             ], 404);
         }
+
+        $task->project_id = [
+            [
+                "project_id" => $task->project->project_id,
+                "project_name" => $task->project->project_name,
+                "description" => $task->project->description,
+                "deadline" => $task->project->deadline,
+                "pm_id" => $task->project->pm_id,
+                "created_by" => $task->project->created_by,
+                "updated_by" => $task->project->updated_by,
+                "created_at" => $task->project->created_at,
+                "updated_at" => $task->project->updated_at,
+                "deleted_at" => $task->project->deleted_at,
+            ]
+        ];
+    
+        // Modifikasi struktur data collaborator_id menjadi array
+        $task->collaborator_id = [
+            [
+                "user_id" => $task->collaborator->user_id,
+                "name" => $task->collaborator->name,
+                "username" => $task->collaborator->username,
+                "path_photo" => $task->collaborator->path_photo,
+                "status" => $task->collaborator->status,
+                "last_login" => $task->collaborator->last_login,
+                "created_at" => $task->collaborator->created_at,
+                "updated_at" => $task->collaborator->updated_at,
+                "created_by" => $task->collaborator->created_by,
+                "updated_by" => $task->collaborator->updated_by,
+            ]
+        ];
+    
+        // Hapus properti yang tidak diperlukan dari task untuk menghindari duplikasi data
+        unset($task->project, $task->collaborator);
     
         // Response sukses dengan data task
         return response()->json([
