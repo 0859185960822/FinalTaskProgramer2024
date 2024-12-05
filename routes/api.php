@@ -3,12 +3,13 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\API\V1\Admin\ProjectController;
-use App\Http\Controllers\API\V1\ConfigController;
 use App\Http\Controllers\API\V1\MenuController;
 use App\Http\Controllers\API\V1\RoleController;
 use App\Http\Controllers\API\V1\UserController;
+use App\Http\Controllers\API\V1\ConfigController;
 use App\Http\Controllers\API\V1\ReferenceController;
+use App\Http\Controllers\API\V1\Admin\ProjectController;
+use App\Http\Controllers\API\V1\Admin\Master\CommentController;
 
 
 /*
@@ -84,4 +85,9 @@ Route::prefix('v1')->group(function () {
     });
     Route::get('/project-management', [ProjectController::class, 'projectManagement'])->middleware(['auth.api'])->name('projectManagement');
     Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api'])->name('projectManagement.search');
+
+    Route::prefix('comment')->group(function () {
+        Route::post('/', [CommentController::class, 'store'])->middleware(['auth.api']);
+        Route::get('/{id}', [CommentController::class, 'index'])->middleware(['auth.api']);
+    });
 });
