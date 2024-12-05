@@ -21,7 +21,7 @@ class ProjectController extends Controller
     /**
      * Project.Index
      *
-     * @response Projects<ProjectResource>
+     * @response array{data: ProjectResource[], meta: array{permissions: bool}}
      */
     public function index()
     {

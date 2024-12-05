@@ -87,7 +87,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api'])->name('projectManagement.search');
 
     Route::prefix('comment')->group(function () {
-        Route::post('/', [CommentController::class, 'store'])->middleware(['auth.api']);
-        Route::get('/{id}', [CommentController::class, 'index'])->middleware(['auth.api']);
+        Route::post('/', [CommentController::class, 'store'])->middleware(['auth.api'])->name('getComment');
+        Route::get('/{id}', [CommentController::class, 'index'])->middleware(['auth.api'])->name('addComment');
     });
 });

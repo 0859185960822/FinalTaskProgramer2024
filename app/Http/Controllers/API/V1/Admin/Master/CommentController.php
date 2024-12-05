@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Auth;
 class CommentController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Get Comment
+     *
+     * @response Projects<ProjectResource>
      */
     public function index(string $task_id)
     {
@@ -50,7 +52,7 @@ class CommentController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Add Comment
      */
     public function store(Request $request)
     {

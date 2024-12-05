@@ -45,27 +45,7 @@ class projectResource extends JsonResource
                     'user_id' => $this->projectManager->user_id,
                     'name' => $this->projectManager->name,
             ],
-            // 'collaborator' => $this->whenLoaded('teamMembers', function () {
-            //     return $this->teamMembers->map(function ($member) {
-            //         return [
-            //             'user_id' => $member->user_id,
-            //             'name' => $member->name,
-            //             'username' => $member->username, // Contoh tambahan atribut
-            //         ];
-            //     });
-            // }),
             'collaborator' => UserResource::collection($this->whenLoaded('teamMembers')),
-            // 'task' => $this->whenLoaded('task', function () {
-            //     return $this->task->map(function ($task) { // Ubah sesuai format map()
-            //         return [
-            //             'task_id' => $task->task_id,
-            //             'project_id' => $task->project_id,
-            //             'collaborator_id' => $task->collaborator_id,
-            //             'task_name' => $task->task_name,
-            //             'status_task' => $task->status_task,
-            //         ];
-            //     });
-            // }),
             'task' => TaskResource::collection($this->whenLoaded('task')),
             'sisa_waktu' => $sisa_waktu,
             'progress_project' => $progress_project . '%',
