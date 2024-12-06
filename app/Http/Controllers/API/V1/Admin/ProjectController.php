@@ -187,6 +187,8 @@ class ProjectController extends Controller
                         $dataToInsert[] = [
                             'user_id' => $collaborator['user_id'],
                             'project_id' => $project_id,
+                            'created_at' => Carbon::now(),
+                            'updated_at' => Carbon::now(),
                         ];
                     }
                     UsersHasTeam::insert($dataToInsert); // Mass insert kolaborator baru
@@ -256,6 +258,7 @@ class ProjectController extends Controller
             $newCollaborator[] = [
                 'user_id' => $user_id,
                 'project_id' => $request->project_id,
+                'created_at' => Carbon::now(),
             ];
         }
 
