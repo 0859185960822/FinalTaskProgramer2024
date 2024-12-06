@@ -28,6 +28,7 @@ return new class extends Migration
             $table->integer('created_by')->nullable(true);
             $table->integer('updated_by')->nullable(true);
             $table->softDeletes();
+            $table->date('deadline')->nullable();
         });
     }
 

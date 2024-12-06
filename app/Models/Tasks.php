@@ -19,6 +19,7 @@ class Tasks extends Model
         'task_name',
         'priority_task',
         'type_task',
+        'deadline',
         'status_task',
         'created_by',
         'updated_by',
