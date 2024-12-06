@@ -56,7 +56,6 @@ class ProjectController extends Controller
                 'error' => $e,
             ], 'Failed to process data', 500);
         }
-        
     }
 
     /**
@@ -214,7 +213,7 @@ class ProjectController extends Controller
         $project = Projects::find($id);
 
         if ($project) {
-            $project->delete(); // Melakukan soft delete
+            $project->delete();
             return ResponseFormatter::success(null, 'Project soft deleted successfully');
         } else {
             return ResponseFormatter::error([], 'Project not found', 404);

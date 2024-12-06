@@ -253,35 +253,12 @@ class TasksController extends Controller
      */
     public function destroy($id)
     {
-        try {
             $task = Tasks::find($id);
-            if (!$task) {
-                return ResponseFormatter::error(
-                    null,
-                    'Task not found',
-                    404
-                );
+            if ($task) {
+                $task->delete();
+                return ResponseFormatter::success(null, 'Task soft deleted successfully');
+            } else {
+                return ResponseFormatter::error([], 'Task not found', 404);
             }
-
-            $task->deleted_at = now();
-            $task->updated_by = auth()->user()->user_id;
-            $task->save();
-
-            return ResponseFormatter::success(
-                [
-                    'task_id' => $task->task_id,
-                    'task_name' => $task->task_name,
-                    'status_task' => $task->status_task,
-                    'deleted_at' => $task->deleted_at
-                ],
-                'Task deleted successfully'
-            );
-        } catch (\Exception $e) {
-            return ResponseFormatter::error(
-                ['error' => $e->getMessage()],
-                'Failed to delete task',
-                500
-            );
-        }
     }
 }

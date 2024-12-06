@@ -4,14 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 
 class Tasks extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    protected $table = 'tasks'; // Nama tabel di database
-    protected $primaryKey = 'task_id'; // Primary key tabel
-    public $timestamps = true; // Aktifkan timestamps untuk created_at dan updated_at
+    protected $table = 'tasks'; 
+    protected $primaryKey = 'task_id'; 
+    public $timestamps = true;
 
     protected $fillable = [
         'project_id',
@@ -23,6 +25,7 @@ class Tasks extends Model
         'status_task',
         'created_by',
         'updated_by',
+        'deleted_at'
     ];
 
     // Relasi ke tabel Project
