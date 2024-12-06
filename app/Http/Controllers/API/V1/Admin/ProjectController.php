@@ -223,10 +223,14 @@ class ProjectController extends Controller
 
     public function addCollaborator(Request $request)
     {
+        // Pastikan user_id dalam bentuk array
+        $user_ids = is_array($request->user_id) ? $request->user_id : json_decode($request->user_id, true);
+
         // Validasi data input
         $validator = Validator::make($request->all(), [
             'project_id' => 'required|exists:projects,project_id',
-            'user_id' => 'required|integer|exists:users,user_id',
+            'user_id' => 'required',
+            'user_id.*' => 'exists:users,user_id', // Validasi setiap user_id yang ada di dalam array
         ]);
 
         if ($validator->fails()) {
@@ -235,9 +239,9 @@ class ProjectController extends Controller
             ], 'Validation failed', 402);
         }
 
-        // Cek apakah user sudah terdaftar dalam project
+        // Cek apakah user sudah terdaftar dalam project menggunakan whereIn
         $exists = UsersHasTeam::where('project_id', $request->project_id)
-            ->where('user_id', $request->user_id)
+            ->whereIn('user_id', $user_ids) // Menggunakan whereIn untuk memeriksa array user_id
             ->exists();
 
         if ($exists) {
@@ -246,11 +250,17 @@ class ProjectController extends Controller
             ], 'Conflict', 409);
         }
 
-        // Insert data baru ke tabel users_has_teams
-        $newCollaborator = UsersHasTeam::create([
-            'user_id' => $request->user_id,
-            'project_id' => $request->project_id,
-        ]);
+        // Prepare data untuk mass insert
+        $newCollaborator = [];
+        foreach ($user_ids as $user_id) {
+            $newCollaborator[] = [
+                'user_id' => $user_id,
+                'project_id' => $request->project_id,
+            ];
+        }
+
+        // Mass insert kolaborator baru
+        UsersHasTeam::insert($newCollaborator);
 
         return response()->json([
             'message' => 'Collaborator berhasil ditambahkan ke project.',
