@@ -203,7 +203,8 @@ class ProjectController extends Controller
             return ResponseFormatter::error([
                 'message' => 'Something went wrong',
                 'error' => $error,
-            ], 'Failed to process data', 500);
+            ], 'Failed to process da
+            ta', 500);
         }
     }
 
