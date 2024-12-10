@@ -78,11 +78,13 @@ Route::prefix('v1')->group(function () {
 
     Route::prefix('admin')->group(function () {
         Route::post('/', [ProjectController::class, 'store'])->middleware(['auth.api']);
+        // Route::get('/projects/export', [ProjectController::class, 'exportProjects']);
         Route::get('/', [ProjectController::class, 'index'])->middleware(['auth.api']);
         Route::get('/{id}', [ProjectController::class, 'show'])->middleware(['auth.api']);
         Route::put('/', [ProjectController::class, 'update'])->middleware(['auth.api']);
         Route::delete('/{id}', [ProjectController::class, 'destroy'])->middleware(['auth.api']);
         Route::post('/add-collaborator', [ProjectController::class, 'addCollaborator'])->middleware(['auth.api']);
+        Route::get('/projects/export', [ProjectController::class, 'exportToExcel']);
     });
     Route::get('/project-management', [ProjectController::class, 'projectManagement'])->middleware(['auth.api'])->name('projectManagement');
     Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api'])->name('projectManagement.search');

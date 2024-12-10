@@ -14,7 +14,20 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\projectResource;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
+use Illuminate\Support\Facades\Response;
+
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProjectExport;
+
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Borders;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Font;
 
 class ProjectController extends Controller
 {
@@ -23,12 +36,75 @@ class ProjectController extends Controller
      *
      * @response array{data: ProjectResource[], meta: array{permissions: bool}}
      */
+
+    public function exportToExcel()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('B1', 'Nama Proyek');
+        $sheet->setCellValue('C1', 'Progress');
+        $sheet->setCellValue('D1', 'Deadline');
+        $sheet->setCellValue('E1', 'Sisa Waktu');
+        $sheet->setCellValue('F1', 'Status Deadline');
+
+        $sheet->getStyle('B1:F1')->getFont()->setBold(true);
+        $sheet->getStyle('B1:F1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFF00');
+        $sheet->getStyle('B1:F1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $projects = Projects::all();
+
+        $row = 2;
+        foreach ($projects as $project) {
+            $totalTasks = $project->task->count();
+            $doneTasks = $project->task->where('status_task', 'DONE')->count();
+
+            $progress = $totalTasks > 0 ? ($doneTasks / $totalTasks) * 100 : 0;
+
+            $sisaWaktu = now()->diffInDays($project->deadline);
+
+            $statusDeadline = \Carbon\Carbon::parse($project->deadline)->isPast() ? 'Terlambat' : 'Tepat Waktu';
+
+            $sheet->setCellValue('B' . $row, $project->project_name);
+            $sheet->setCellValue('C' . $row, $progress . '%');
+            $sheet->setCellValue('D' . $row, \Carbon\Carbon::parse($project->deadline)->format('Y-m-d'));
+            $sheet->setCellValue('E' . $row, $sisaWaktu . ' hari');
+            $sheet->setCellValue('F' . $row, $statusDeadline);
+            $row++;
+        }
+
+        $sheet->getStyle('B1:F' . ($row - 1))
+            ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THICK);
+
+        $sheet->getStyle('B1:F' . ($row - 1))
+            ->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)
+            ->setWrapText(true);
+
+        $sheet->getColumnDimension('B')->setWidth(25);
+        $sheet->getColumnDimension('C')->setWidth(15);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(20);
+        $sheet->getColumnDimension('F')->setWidth(20);
+
+        $sheet->getStyle('B2:F' . ($row - 1))
+            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'Proyek_Export_' . date('Ymd_His') . '.xlsx';
+
+        $filePath = storage_path('app/public/' . $fileName);
+        $writer->save($filePath);
+
+        return response()->download($filePath);
+    }
+
+
     public function index()
     {
         try {
             $project = Projects::with(['projectManager', 'teamMembers'])
-                        ->where('pm_id',Auth::user()->user_id)
-                        ->get();
+                ->where('pm_id', Auth::user()->user_id)
+                ->get();
             // dd($project);
             $totalProject = $project->count();
             $onGoing = 0;
@@ -48,7 +124,7 @@ class ProjectController extends Controller
                 'total_project' => $totalProject,
                 'project_on_going' => $onGoing,
                 'project_done' => $done,
-                'data_project'=>projectResource::collection($project),
+                'data_project' => projectResource::collection($project),
             ], 'Success Get Data');
         } catch (Exception $e) {
             return ResponseFormatter::error([
@@ -57,6 +133,7 @@ class ProjectController extends Controller
             ], 'Failed to process data', 500);
         }
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -83,7 +160,7 @@ class ProjectController extends Controller
                     'error' => $validator->errors()->all(),
                 ], 'validation failed', 402);
             }
-            
+
             $data = [
                 'project_name' => $request->project_name,
                 'description' => $request->description,
@@ -91,25 +168,25 @@ class ProjectController extends Controller
                 'pm_id' => Auth::user()->user_id,
                 'created_by' => Auth::user()->user_id,
             ];
-           $project = Projects::create($data);
-           
-           $project_id = $project->project_id;
-           $data_collaborator = json_decode($request->collaborator);
-           if ($data_collaborator) {
-            $dataToInsert = [];
-            foreach ($data_collaborator as $collaborators) {
-                $dataToInsert[] = [
-                    'user_id' => $collaborators->user_id,
-                    'project_id' => $project_id,              
-                    'created_at' => now(),              
-                ];
+            $project = Projects::create($data);
+
+            $project_id = $project->project_id;
+            $data_collaborator = json_decode($request->collaborator);
+            if ($data_collaborator) {
+                $dataToInsert = [];
+                foreach ($data_collaborator as $collaborators) {
+                    $dataToInsert[] = [
+                        'user_id' => $collaborators->user_id,
+                        'project_id' => $project_id,
+                        'created_at' => now(),
+                    ];
+                }
+                UsersHasTeam::insert($dataToInsert); // Mass insert
             }
-            UsersHasTeam::insert($dataToInsert); // Mass insert
-        }
 
             return ResponseFormatter::success([
-               $data, 
-            ],'Success Create Data');
+                $data,
+            ], 'Success Create Data');
         } catch (Exception $error) {
             return ResponseFormatter::error([
                 'message' => 'Something went wrong',
@@ -123,8 +200,8 @@ class ProjectController extends Controller
      */
     public function show(string $id)
     {
-        try{
-            $project = Projects::with(['task','projectManager','teamMembers'])->find($id);
+        try {
+            $project = Projects::with(['task', 'projectManager', 'teamMembers'])->find($id);
 
             return ResponseFormatter::success(new ProjectResource($project), 'Success Get Data');
         } catch (Exception $error) {
@@ -162,16 +239,16 @@ class ProjectController extends Controller
             }
 
             $data = Projects::where('project_id', $request->project_id)->first();
-            if ($data){
+            if ($data) {
                 $dataUpdate = [
                     'project_name' => $request->project_name,
                     'description' => $request->description,
                     'deadline' => $request->deadline,
                     'pm_id' => Auth::user()->user_id,
-                    'updated_by' => Auth::user()->user_id,   
+                    'updated_by' => Auth::user()->user_id,
                 ];
                 $data->update($dataUpdate);
-                
+
                 // Update kolaborator jika ada data collaborator
                 $project_id = $data->project_id;
                 $data_collaborator = json_decode($request->collaborator, true);
@@ -194,10 +271,10 @@ class ProjectController extends Controller
                 }
 
                 return ResponseFormatter::success([
-                $dataUpdate, 
-                ],'Success Update Data');
+                    $dataUpdate,
+                ], 'Success Update Data');
             } else {
-                return ResponseFormatter::error([],'Data Not Found', 404);
+                return ResponseFormatter::error([], 'Data Not Found', 404);
             }
         } catch (Exception $error) {
             return ResponseFormatter::error([
@@ -283,7 +360,7 @@ class ProjectController extends Controller
             }
 
             $user_id = auth()->user()->user_id;
-            
+
             // Query awal untuk memfilter berdasarkan PM ID
             $query = Projects::where('pm_id', $user_id);
 
@@ -348,6 +425,4 @@ class ProjectController extends Controller
     {
         return strtotime($date) !== false;
     }
-
-
 }
