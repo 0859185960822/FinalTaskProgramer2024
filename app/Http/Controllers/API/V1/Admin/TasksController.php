@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\API\V1\Admin;
 
 
-use App\Models\Tasks;
-use App\Http\Controllers\Controller;
-use App\Helpers\ResponseFormatter;
-use App\Models\User;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Models\User;
+use App\Models\Tasks;
+use App\Models\UsersHasTeam;
+use Illuminate\Http\Request;
+use App\Helpers\ResponseFormatter;
+use App\Http\Controllers\Controller;
 
 
 class TasksController extends Controller
@@ -45,6 +46,15 @@ class TasksController extends Controller
                 'project_id' => 'required|exists:projects,project_id',
                 'deadline' => 'required|date'
             ]);
+            $exists = UsersHasTeam::where('project_id', $validated['project_id'])
+                ->where('user_id', $validated['collaborator_id'])
+                ->exists();
+
+            if (!$exists) {
+                return ResponseFormatter::error([
+                    'error' => 'User belum terdaftar dalam project.',
+                ], 'Conflict', 409);
+            }
 
             $task = new Tasks();
             $task->task_name = $validated['task_name'];
@@ -186,6 +196,16 @@ class TasksController extends Controller
                 'status_task' => 'nullable|in:PENDING,IN PROGRESS,DONE',
                 'deadline' => 'nullable|date',
             ]);
+            
+            $exists = UsersHasTeam::where('project_id', Tasks::find($task_id)->project_id)
+                ->where('user_id', $validated['collaborator_id'])
+                ->exists();
+
+            if (!$exists) {
+                return ResponseFormatter::error([
+                    'error' => 'User belum terdaftar dalam project.',
+                ], 'Conflict', 409);
+            }
 
             $task->task_name = $validated['task_name'];
             $task->priority_task = $validated['priority_task'];

@@ -319,15 +319,18 @@ class ProjectController extends Controller
         }
 
         // Cek apakah user sudah terdaftar dalam project menggunakan whereIn
-        $exists = UsersHasTeam::where('project_id', $request->project_id)
-            ->whereIn('user_id', $user_ids) // Menggunakan whereIn untuk memeriksa array user_id
-            ->exists();
+        // $exists = UsersHasTeam::where('project_id', $request->project_id)
+        //     ->whereIn('user_id', $user_ids) // Menggunakan whereIn untuk memeriksa array user_id
+        //     ->exists();
 
-        if ($exists) {
-            return ResponseFormatter::error([
-                'error' => 'User sudah terdaftar dalam project.',
-            ], 'Conflict', 409);
-        }
+        // if ($exists) {
+        //     return ResponseFormatter::error([
+        //         'error' => 'User sudah terdaftar dalam project.',
+        //     ], 'Conflict', 409);
+        // }
+        UsersHasTeam::where('project_id', $request->project_id)
+        ->whereIn('user_id', $user_ids)
+        ->delete();
 
         // Prepare data untuk mass insert
         $newCollaborator = [];
