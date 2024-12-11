@@ -54,15 +54,20 @@ class ProjectController extends Controller
 
         $projects = Projects::all();
 
+        if ($projects->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data proyek tidak ditemukan.',
+                'data' => []
+            ], 404);
+        }
+
         $row = 2;
         foreach ($projects as $project) {
             $totalTasks = $project->task->count();
             $doneTasks = $project->task->where('status_task', 'DONE')->count();
-
             $progress = $totalTasks > 0 ? ($doneTasks / $totalTasks) * 100 : 0;
-
             $sisaWaktu = now()->diffInDays($project->deadline);
-
             $statusDeadline = \Carbon\Carbon::parse($project->deadline)->isPast() ? 'Terlambat' : 'Tepat Waktu';
 
             $sheet->setCellValue('B' . $row, $project->project_name);
@@ -75,13 +80,11 @@ class ProjectController extends Controller
 
         $sheet->getStyle('B1:F' . ($row - 1))
             ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THICK);
-
         $sheet->getStyle('B1:F' . ($row - 1))
             ->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)
             ->setWrapText(true);
 
         $sheet->getColumnDimension('B')->setWidth(25);
-        $sheet->getColumnDimension('C')->setWidth(15);
         $sheet->getColumnDimension('D')->setWidth(20);
         $sheet->getColumnDimension('E')->setWidth(20);
         $sheet->getColumnDimension('F')->setWidth(20);
@@ -92,11 +95,13 @@ class ProjectController extends Controller
         $writer = new Xlsx($spreadsheet);
         $fileName = 'Proyek_Export_' . date('Ymd_His') . '.xlsx';
 
-        $filePath = storage_path('app/public/' . $fileName);
-        $writer->save($filePath);
-
-        return response()->download($filePath);
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
+
 
 
     public function index()
@@ -329,8 +334,8 @@ class ProjectController extends Controller
         //     ], 'Conflict', 409);
         // }
         UsersHasTeam::where('project_id', $request->project_id)
-        ->whereIn('user_id', $user_ids)
-        ->delete();
+            ->whereIn('user_id', $user_ids)
+            ->delete();
 
         // Prepare data untuk mass insert
         $newCollaborator = [];
