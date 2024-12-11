@@ -88,6 +88,7 @@ Route::prefix('v1')->group(function () {
     });
     Route::get('/project-management', [ProjectController::class, 'projectManagement'])->middleware(['auth.api'])->name('projectManagement');
     Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api'])->name('projectManagement.search');
+    Route::get('/laporan-project', [ProjectController::class, 'laporanProject'])->middleware(['auth.api'])->name('laporanProject');
 
     Route::prefix('tasks')->group(function () {
         Route::post('/', [TasksController::class, 'store'])->middleware('auth.api');
