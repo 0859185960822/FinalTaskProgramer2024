@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1\Admin;
 
 
+use Exception;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Tasks;
@@ -10,6 +11,7 @@ use App\Models\UsersHasTeam;
 use Illuminate\Http\Request;
 use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\TaskResource;
 
 
 class TasksController extends Controller
@@ -280,5 +282,49 @@ class TasksController extends Controller
             } else {
                 return ResponseFormatter::error([], 'Task not found', 404);
             }
+    }
+
+    public function taskManagement(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 5);
+
+            // Validasi perPage
+            $perPageOptions = [5, 10, 15, 20, 50];
+            if (!in_array($perPage, $perPageOptions)) {
+                $perPage = 5;
+            }
+
+            $user_id = auth()->user()->user_id;
+
+            // Query awal untuk memfilter berdasarkan PM ID
+            $query = Tasks::where('collaborator_id', $user_id);
+
+            // Eksekusi query
+            $task = $query->latest()->paginate($perPage);
+
+            // Cek jika data kosong
+            if ($task->isEmpty()) {
+                return ResponseFormatter::error([], 'Task not found', 404);
+            }
+            
+            return ResponseFormatter::success([
+                TaskResource::collection($task),
+                'pagination' => [
+                    'total' => $task->total(),
+                    'per_page' => $task->perPage(),
+                    'current_page' => $task->currentPage(),
+                    'from' => $task->firstItem(),
+                    'to' => $task->lastItem(),
+                    'next_page_url' => $task->nextPageUrl(),
+                    'prev_page_url' => $task->previousPageUrl(),
+                ],
+            ], 'Success Get Data');
+        } catch (Exception $error) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $error->getMessage(),
+            ], 'Failed to process data', 500);
+        }
     }
 }
