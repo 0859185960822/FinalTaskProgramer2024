@@ -15,9 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\projectResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-
 use Illuminate\Support\Facades\Response;
-
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProjectExport;
 
@@ -102,6 +100,54 @@ class ProjectController extends Controller
         ]);
     }
 
+
+    public function filterLaporanProject(Request $request)
+    {
+        try {
+            $progress = $request->input('progress');
+            $statusDeadline = $request->input('status_deadline'); 
+            $sisaWaktu = $request->input('sisa_waktu'); 
+
+            $projects = Projects::with(['task'])
+                ->where('pm_id', Auth::user()->user_id)
+                ->get();
+
+            if ($progress !== null) {
+                $projects = $projects->filter(function ($project) use ($progress) {
+                    $totalTasks = $project->task->count();
+                    $doneTasks = $project->task->where('status_task', 'DONE')->count();
+                    $calculatedProgress = $totalTasks > 0 ? ($doneTasks / $totalTasks) * 100 : 0;
+
+                    return round($calculatedProgress) == $progress;
+                });
+            }
+
+            if ($statusDeadline) {
+                $projects = $projects->filter(function ($project) use ($statusDeadline) {
+                    $isLate = \Carbon\Carbon::parse($project->deadline)->isPast();
+                    return $statusDeadline === 'tepat waktu' ? !$isLate : $isLate;
+                });
+            }
+
+            if ($sisaWaktu !== null) {
+                $projects = $projects->filter(function ($project) use ($sisaWaktu) {
+                    $remainingDays = now()->diffInDays($project->deadline, false);
+                    return $remainingDays == $sisaWaktu;
+                });
+            }
+            
+
+            return ResponseFormatter::success([
+                'total_filtered_projects' => $projects->count(),
+                'data_projects' => projectResource::collection($projects),
+            ], 'Filtered Projects Retrieved Successfully');
+        } catch (Exception $e) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage(),
+            ], 'Failed to filter projects', 500);
+        }
+    }
 
 
     public function index()
