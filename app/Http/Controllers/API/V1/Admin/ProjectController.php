@@ -491,4 +491,43 @@ class ProjectController extends Controller
     {
         return strtotime($date) !== false;
     }
+
+    public function laporanProject(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 5);
+
+            // Validasi perPage
+            $perPageOptions = [5, 10, 15, 20, 50];
+            if (!in_array($perPage, $perPageOptions)) {
+                $perPage = 5;
+            }
+
+            // Eksekusi query
+            $project = Projects::latest()->paginate($perPage);
+
+            // Cek jika data kosong
+            if ($project->isEmpty()) {
+                return ResponseFormatter::error([], 'Project not found', 404);
+            }
+
+            return ResponseFormatter::success([
+                projectResource::collection($project),
+                'pagination' => [
+                    'total' => $project->total(),
+                    'per_page' => $project->perPage(),
+                    'current_page' => $project->currentPage(),
+                    'from' => $project->firstItem(),
+                    'to' => $project->lastItem(),
+                    'next_page_url' => $project->nextPageUrl(),
+                    'prev_page_url' => $project->previousPageUrl(),
+                ],
+            ], 'Success Get Data');
+        } catch (Exception $error) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $error->getMessage(),
+            ], 'Failed to process data', 500);
+        }
+    }
 }

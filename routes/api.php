@@ -89,6 +89,7 @@ Route::prefix('v1')->group(function () {
     });
     Route::get('/project-management', [ProjectController::class, 'projectManagement'])->middleware(['auth.api'])->name('projectManagement');
     Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api'])->name('projectManagement.search');
+    Route::get('/laporan-project', [ProjectController::class, 'laporanProject'])->middleware(['auth.api'])->name('laporanProject');
 
     Route::prefix('tasks')->group(function () {
         Route::post('/', [TasksController::class, 'store'])->middleware('auth.api');
@@ -100,5 +101,5 @@ Route::prefix('v1')->group(function () {
         Route::get('/{id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('addComment');
     });
     Route::get('/task-management', [TasksController::class, 'taskManagement'])->middleware(['auth.api'])->name('taskManagement');
-    Route::post('/task-management/search', [TasksController::class, 'taskProjectManagement'])->middleware(['auth.api'])->name('taskManagement.search');
+    Route::post('/task-management/search', [TasksController::class, 'searchTaskManagement'])->middleware(['auth.api'])->name('taskManagement.search');
 });
