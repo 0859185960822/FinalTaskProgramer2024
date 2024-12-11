@@ -381,7 +381,19 @@ class ProjectController extends Controller
             }
 
             // Return response
-            return ResponseFormatter::success(projectResource::collection($project), 'Success Get Data');
+            // return ResponseFormatter::success(projectResource::collection($project), 'Success Get Data');
+            return ResponseFormatter::success([
+                projectResource::collection($project),
+                'pagination' => [
+                    'total' => $project->total(),
+                    'per_page' => $project->perPage(),
+                    'current_page' => $project->currentPage(),
+                    'from' => $project->firstItem(),
+                    'to' => $project->lastItem(),
+                    'next_page_url' => $project->nextPageUrl(),
+                    'prev_page_url' => $project->previousPageUrl(),
+                ],
+            ], 'Success Get Data');
         } catch (Exception $error) {
             return ResponseFormatter::error([
                 'message' => 'Something went wrong',
