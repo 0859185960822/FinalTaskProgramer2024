@@ -327,4 +327,30 @@ class TasksController extends Controller
             ], 'Failed to process data', 500);
         }
     }
+
+    public function searchTaskManagement(Request $request)
+    {
+        // Ambil parameter pencarian global dari request
+        $search = $request->input('search'); // Input pencarian global
+        $user_id = auth()->user()->user_id;
+
+        // Query awal untuk memfilter berdasarkan Collaborator ID
+        $query = Tasks::where(function ($subQuery) use ($user_id, $search) {
+            $subQuery->where('collaborator_id', $user_id)
+                ->where(function ($innerQuery) use ($search) {
+                    $innerQuery->where('task_name', 'LIKE', "%{$search}%");
+                });
+        });
+
+        // Eksekusi query
+        $task = $query->get();
+
+        // Cek jika data kosong
+        if ($task->isEmpty()) {
+            return ResponseFormatter::error([], 'Task not found', 404);
+        }
+
+        // Return response
+        return ResponseFormatter::success(TaskResource::collection($task), 'Success Get Data');
+    }
 }

@@ -99,5 +99,5 @@ Route::prefix('v1')->group(function () {
         Route::get('/{id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('addComment');
     });
     Route::get('/task-management', [TasksController::class, 'taskManagement'])->middleware(['auth.api'])->name('taskManagement');
-    Route::post('/task-management/search', [TasksController::class, 'taskProjectManagement'])->middleware(['auth.api'])->name('taskManagement.search');
+    Route::post('/task-management/search', [TasksController::class, 'searchTaskManagement'])->middleware(['auth.api'])->name('taskManagement.search');
 });
