@@ -135,7 +135,7 @@ class ProjectController extends Controller
                     return $remainingDays == $sisaWaktu;
                 });
             }
-            
+
 
             return ResponseFormatter::success([
                 'total_filtered_projects' => $projects->count(),
@@ -171,6 +171,7 @@ class ProjectController extends Controller
                     $onGoing++;
                 }
             }
+            
             return ResponseFormatter::success([
                 'total_project' => $totalProject,
                 'project_on_going' => $onGoing,
