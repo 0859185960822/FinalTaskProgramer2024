@@ -33,6 +33,8 @@ class projectResource extends JsonResource
         // Hitung progress_project
         $totalTasks = $this->task ? $this->task->count() : 0;
         $doneTasks = $this->task ? $this->task->where('status_task', 'DONE')->count() : 0;
+        $onGoingTasks = $this->task ? $this->task->where('status_task', 'ON GOING')->count() : 0;
+        $pendingTasks = $this->task ? $this->task->where('status_task', 'PENDING')->count() : 0;
 
         $progress_project = $totalTasks > 0 ? round(($doneTasks / $totalTasks) * 100, 2) : 0;
         
@@ -48,6 +50,10 @@ class projectResource extends JsonResource
             'collaborator' => UserResource::collection($this->whenLoaded('teamMembers')),
             'task' => TaskResource::collection($this->whenLoaded('task')),
             'sisa_waktu' => $sisa_waktu,
+            'total_task' => $totalTasks,
+            'task_done' => $doneTasks,
+            'task_pending' => $pendingTasks,
+            'task_on_going' => $onGoingTasks,
             'progress_project' => $progress_project . '%',
         ];
     }
