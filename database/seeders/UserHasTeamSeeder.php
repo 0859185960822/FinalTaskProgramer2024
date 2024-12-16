@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Support\Facades\DB;
 
 class UserHasTeamSeeder extends Seeder
 {
@@ -15,7 +16,7 @@ class UserHasTeamSeeder extends Seeder
     {
         $project_id = \App\Models\Projects::first();
         $user_id = \App\Models\User::first();
-        \App\Models\UsersHasTeam::insert([
+        DB::table('users_has_teams')->insert([
             'user_id'       => $user_id->user_id,
             'project_id'    => $project_id->project_id,
             'created_at'     => Carbon::now(),

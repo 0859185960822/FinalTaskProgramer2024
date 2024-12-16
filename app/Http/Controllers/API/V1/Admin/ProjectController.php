@@ -119,8 +119,10 @@ class ProjectController extends Controller
     {
         try {
             $progress = $request->input('progress');
-            $statusDeadline = $request->input('status_deadline');
+            $statusDeadline = $request->input('status_deadline'); 
             $sisaWaktu = $request->input('sisa_waktu');
+            $deadlineFrom = $request->input('deadline_from'); 
+            $deadlineTo = $request->input('deadline_to'); 
 
             $projects = Projects::with(['task'])
                 ->where('pm_id', Auth::user()->user_id)
@@ -150,6 +152,25 @@ class ProjectController extends Controller
                 });
             }
 
+            if ($deadlineFrom || $deadlineTo) {
+                $projects = $projects->filter(function ($project) use ($deadlineFrom, $deadlineTo) {
+                    $deadline = Carbon::parse($project->deadline);
+    
+                    if ($deadlineFrom && $deadlineTo) {
+                        return $deadline->between($deadlineFrom, $deadlineTo);
+                    }
+    
+                    if ($deadlineFrom) {
+                        return $deadline->greaterThanOrEqualTo($deadlineFrom);
+                    }
+    
+                    if ($deadlineTo) {
+                        return $deadline->lessThanOrEqualTo($deadlineTo);
+                    }
+    
+                    return true;
+                });
+            }
 
             return ResponseFormatter::success([
                 'total_filtered_projects' => $projects->count(),
@@ -170,7 +191,7 @@ class ProjectController extends Controller
             $project = Projects::with(['projectManager', 'teamMembers'])
                 ->where('pm_id', Auth::user()->user_id)
                 ->get();
-            // dd($project);
+            
             $totalProject = $project->count();
             $onGoing = 0;
             $done = 0;
