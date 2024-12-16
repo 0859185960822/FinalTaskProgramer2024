@@ -103,13 +103,15 @@ class ProjectController extends Controller
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Download file
-        $writer = new Xlsx($spreadsheet);
         $fileName = 'Laporan_Project_' . date('Ymd_His') . '.xlsx';
 
-        $filePath = storage_path('app/public/' . $fileName);
-        $writer->save($filePath);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
 
-        return response()->download($filePath);
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
     }
 
 
