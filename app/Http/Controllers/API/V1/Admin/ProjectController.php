@@ -40,65 +40,80 @@ class ProjectController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        $sheet->setCellValue('B1', 'Nama Proyek');
-        $sheet->setCellValue('C1', 'Progress');
-        $sheet->setCellValue('D1', 'Deadline');
-        $sheet->setCellValue('E1', 'Sisa Waktu');
-        $sheet->setCellValue('F1', 'Status Deadline');
+        // Header kolom
+        $sheet->setCellValue('A4', 'No');
+        $sheet->setCellValue('B4', 'Nama Proyek');
+        $sheet->setCellValue('C4', 'Progress %');
+        $sheet->setCellValue('D4', 'Tanggal Deadline');
+        $sheet->setCellValue('E4', 'Sisa Waktu');
+        $sheet->setCellValue('F4', 'Status Deadline');
 
-        $sheet->getStyle('B1:F1')->getFont()->setBold(true);
-        $sheet->getStyle('B1:F1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFF00');
-        $sheet->getStyle('B1:F1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        // Styling Header
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0A0E32']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ];
+        $sheet->getStyle('A4:F4')->applyFromArray($headerStyle);
 
+        // Mendapatkan data proyek
         $projects = Projects::all();
 
-        if ($projects->isEmpty()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data proyek tidak ditemukan.',
-                'data' => []
-            ], 404);
-        }
-
-        $row = 2;
+        $row = 5;
+        $no = 1;
         foreach ($projects as $project) {
             $totalTasks = $project->task->count();
             $doneTasks = $project->task->where('status_task', 'DONE')->count();
-            $progress = $totalTasks > 0 ? ($doneTasks / $totalTasks) * 100 : 0;
-            $sisaWaktu = now()->diffInDays($project->deadline);
+            $progress = $totalTasks > 0 ? round(($doneTasks / $totalTasks) * 100) : 0;
+            $sisaWaktu = now()->diffInDays($project->deadline, false);
             $statusDeadline = \Carbon\Carbon::parse($project->deadline)->isPast() ? 'Terlambat' : 'Tepat Waktu';
 
+            // Isi data proyek
+            $sheet->setCellValue('A' . $row, $no++);
             $sheet->setCellValue('B' . $row, $project->project_name);
             $sheet->setCellValue('C' . $row, $progress . '%');
-            $sheet->setCellValue('D' . $row, \Carbon\Carbon::parse($project->deadline)->format('Y-m-d'));
-            $sheet->setCellValue('E' . $row, $sisaWaktu . ' hari');
+            $sheet->setCellValue('D' . $row, \Carbon\Carbon::parse($project->deadline)->format('d/m/Y'));
+            $sheet->setCellValue('E' . $row, $sisaWaktu . ' Hari');
             $sheet->setCellValue('F' . $row, $statusDeadline);
+
+            // Styling Sisa Waktu dan Status Deadline
+            $sisaWaktuStyle = ['font' => ['color' => ['rgb' => $sisaWaktu < 0 ? 'FF0000' : '000000']]];
+            $statusStyle = ['font' => ['color' => ['rgb' => $statusDeadline == 'Terlambat' ? 'FF0000' : '008000']]];
+
+            $sheet->getStyle('E' . $row)->applyFromArray($sisaWaktuStyle);
+            $sheet->getStyle('F' . $row)->applyFromArray($statusStyle);
+
             $row++;
         }
 
-        $sheet->getStyle('B1:F' . ($row - 1))
-            ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THICK);
-        $sheet->getStyle('B1:F' . ($row - 1))
-            ->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)
-            ->setWrapText(true);
+        // Styling border
+        $sheet->getStyle('A5:F' . ($row - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('A5:F' . ($row - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet->getColumnDimension('B')->setWidth(25);
-        $sheet->getColumnDimension('D')->setWidth(20);
-        $sheet->getColumnDimension('E')->setWidth(20);
-        $sheet->getColumnDimension('F')->setWidth(20);
+        // Atur lebar kolom
+        foreach (['A' => 5, 'B' => 30, 'C' => 15, 'D' => 20, 'E' => 15, 'F' => 20] as $col => $width) {
+            $sheet->getColumnDimension($col)->setWidth($width);
+        }
 
-        $sheet->getStyle('B2:F' . ($row - 1))
-            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        // Menambahkan judul
+        $sheet->mergeCells('A2:F2');
+        $sheet->setCellValue('A2', 'Laporan Project');
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Download file
+        $fileName = 'Laporan_Project_' . date('Ymd_His') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
 
         $writer = new Xlsx($spreadsheet);
-        $fileName = 'Proyek_Export_' . date('Ymd_His') . '.xlsx';
-
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, $fileName, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ]);
+        $writer->save('php://output');
+        exit;
     }
+
 
 
     public function filterLaporanProject(Request $request)
@@ -192,7 +207,7 @@ class ProjectController extends Controller
                     $onGoing++;
                 }
             }
-            
+
             return ResponseFormatter::success([
                 'total_project' => $totalProject,
                 'project_on_going' => $onGoing,
