@@ -33,7 +33,7 @@ class projectResource extends JsonResource
         // Hitung progress_project
         $totalTasks = $this->task ? $this->task->count() : 0;
         $doneTasks = $this->task ? $this->task->where('status_task', 'DONE')->count() : 0;
-        $onGoingTasks = $this->task ? $this->task->where('status_task', 'ON GOING')->count() : 0;
+        $onGoingTasks = $this->task ? $this->task->where('status_task', 'ONGOING')->count() : 0;
         $pendingTasks = $this->task ? $this->task->where('status_task', 'PENDING')->count() : 0;
 
         $progress_project = $totalTasks > 0 ? round(($doneTasks / $totalTasks) * 100, 2) : 0;

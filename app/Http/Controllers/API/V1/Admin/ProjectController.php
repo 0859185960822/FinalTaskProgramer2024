@@ -192,7 +192,7 @@ class ProjectController extends Controller
             $project = Projects::with(['projectManager', 'teamMembers'])
                 ->where('pm_id', Auth::user()->user_id)
                 ->get();
-            // dd($project);
+            
             $totalProject = $project->count();
             $onGoing = 0;
             $done = 0;
