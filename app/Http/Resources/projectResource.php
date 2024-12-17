@@ -27,6 +27,12 @@ class projectResource extends JsonResource
             $sisa_waktu = 'Deadline Terlewat';
         }
 
+        $deadline = '';
+        if ($this->deadline > Carbon::now()) {
+            $deadline = "Terlambat";
+        } else {
+            $deadline = "Tepat Waktu";
+        }
         // Format deadline dengan nama bulan
         $formattedDeadline = Carbon::parse($this->deadline)->translatedFormat('d F Y');
 
@@ -55,6 +61,7 @@ class projectResource extends JsonResource
             'task_pending' => $pendingTasks,
             'task_on_going' => $onGoingTasks,
             'progress_project' => $progress_project . '%',
+            'status_deadline' => $deadline
         ];
     }
 }

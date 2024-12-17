@@ -83,5 +83,25 @@ class MenuMasterSeeder extends Seeder
             'menu_master_slug' => 'konfigurasi',
             'created_by' => $user->user_id,
         ]);
+        \App\Models\MenuMaster::create([
+            'menu_master_name' => 'Manajemen Proyek',
+            'menu_master_type' => 'MENU',
+            'menu_master_icon' => 'bx bx-food-menu',
+            'menu_master_link' => 'Manajemen-Proyek',
+            'menu_master_urutan' => 5,
+            'menu_master_parent' => 0,
+            'menu_master_slug' => 'manajemen-proyek',
+            'created_by' => $user->user_id,
+        ]);
+        \App\Models\MenuMaster::create([
+            'menu_master_name' => 'Laporan Proyek',
+            'menu_master_type' => 'MENU',
+            'menu_master_icon' => 'bx bx-food-menu',
+            'menu_master_link' => 'Laporan-Proyek',
+            'menu_master_urutan' => 6,
+            'menu_master_parent' => 0,
+            'menu_master_slug' => 'laporan-proyek',
+            'created_by' => $user->user_id,
+        ]);
     }
 }
