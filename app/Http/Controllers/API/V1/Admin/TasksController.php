@@ -66,7 +66,6 @@ class TasksController extends Controller
             $task->project_id = $validated['project_id'];
             $task->deadline = $validated['deadline'];
             $task->status_task = 'PENDING';
-            $task->created_at = now();
             $task->created_by = auth()->user()->user_id;
 
             $task->save();
@@ -215,7 +214,6 @@ class TasksController extends Controller
             $task->collaborator_id = $validated['collaborator_id'];
             $task->status_task = $validated['status_task'] ?? 'PENDING';
             $task->deadline = $validated['deadline'] ?? $task->deadline; // Gunakan deadline lama jika tidak diubah
-            $task->updated_at = now();
             $task->updated_by = auth()->user()->user_id;
 
             $task->save();
