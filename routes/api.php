@@ -95,6 +95,7 @@ Route::prefix('v1')->group(function () {
 
 
     Route::prefix('tasks')->group(function () {
+        Route::get('/index', [TasksController::class, 'index'])->middleware('auth.api');
         Route::post('/', [TasksController::class, 'store'])->middleware('auth.api');
         Route::get('/', [TasksController::class, 'getCollaborators'])->middleware('auth.api');
         Route::get('/{id}', [TasksController::class, 'show'])->middleware('auth.api');

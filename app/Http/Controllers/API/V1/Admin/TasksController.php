@@ -24,10 +24,25 @@ class TasksController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        //
+    public function index(Request $request)
+{
+    $collaboratorId = $request->query('collaborator_id');
+
+    if (!$collaboratorId) {
+        return ResponseFormatter::error('Parameter collaborator_id harus diisi.', 400);
     }
+
+    $tasks = Tasks::where('collaborator_id', $collaboratorId)
+        ->whereNull('deleted_at') 
+        ->with('project') 
+        ->get();
+
+    if ($tasks->isEmpty()) {
+        return ResponseFormatter::success([], 'Tidak ada task untuk collaborator ini.');
+    }
+
+    return ResponseFormatter::success($tasks, 'Berhasil mengambil data tasks.');
+}
 
     /**
      * Show the form for creating a new resource.
@@ -197,7 +212,7 @@ class TasksController extends Controller
                 'status_task' => 'nullable|in:PENDING,IN PROGRESS,DONE',
                 'deadline' => 'nullable|date',
             ]);
-            
+
             $exists = UsersHasTeam::where('project_id', Tasks::find($task_id)->project_id)
                 ->where('user_id', $validated['collaborator_id'])
                 ->exists();
@@ -273,13 +288,13 @@ class TasksController extends Controller
      */
     public function destroy($id)
     {
-            $task = Tasks::find($id);
-            if ($task) {
-                $task->delete();
-                return ResponseFormatter::success(null, 'Task soft deleted successfully');
-            } else {
-                return ResponseFormatter::error([], 'Task not found', 404);
-            }
+        $task = Tasks::find($id);
+        if ($task) {
+            $task->delete();
+            return ResponseFormatter::success(null, 'Task soft deleted successfully');
+        } else {
+            return ResponseFormatter::error([], 'Task not found', 404);
+        }
     }
 
     public function taskManagement(Request $request)
@@ -305,7 +320,7 @@ class TasksController extends Controller
             if ($task->isEmpty()) {
                 return ResponseFormatter::error([], 'Task not found', 404);
             }
-            
+
             return ResponseFormatter::success([
                 TaskResource::collection($task),
                 'pagination' => [

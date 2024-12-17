@@ -79,9 +79,24 @@ class ConfigController extends Controller
         //     ], 'validation failed', 402);
         // }
 
-        $payload = $request->all();
-        $data = ConfigService::update($payload);
-        return ResponseFormatter::success($data['data'], 'update data successful');
+        // $payload = $request->all();
+        $data_payload = array(
+            'loginBackground' => $request->input('loginBackground'),
+            'logoFullDark' => $request->input('logoFullDark'),
+            'logoFullLight' => $request->input('logoFullLight'),
+            'statusLoginBackground' => $request->input('statusLoginBackground'),
+            'statusLogoFullDark' => $request->input('statusLogoFullDark'),
+            'statusLogoFullLight' => $request->input('statusLogoFullLight'),
+            'valueConfigurasi' => $request->input('valueConfigurasi')
+        );
+        $data = ConfigService::update($data_payload);
+        if ($data['status'] == true) {
+            return ResponseFormatter::success($data['data'], 'update data successful');
+        } else {
+            return ResponseFormatter::error([
+                'error' => "Error update data, mohon coba lagi",
+            ], $data['errors'], 402);
+        }
     }
 
     function validationUpload()
