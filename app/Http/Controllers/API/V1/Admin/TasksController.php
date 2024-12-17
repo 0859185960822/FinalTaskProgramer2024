@@ -25,24 +25,24 @@ class TasksController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-{
-    $collaboratorId = $request->query('collaborator_id');
+    {
+        $collaboratorId = $request->query('collaborator_id');
 
-    if (!$collaboratorId) {
-        return ResponseFormatter::error('Parameter collaborator_id harus diisi.', 400);
+        if (!$collaboratorId) {
+            return ResponseFormatter::error('Parameter collaborator_id harus diisi.', 400);
+        }
+
+        $tasks = Tasks::where('collaborator_id', $collaboratorId)
+            ->whereNull('deleted_at')
+            ->with('project')
+            ->get();
+
+        if ($tasks->isEmpty()) {
+            return ResponseFormatter::success([], 'Tidak ada task untuk collaborator ini.');
+        }
+
+        return ResponseFormatter::success($tasks, 'Berhasil mengambil data tasks.');
     }
-
-    $tasks = Tasks::where('collaborator_id', $collaboratorId)
-        ->whereNull('deleted_at') 
-        ->with('project') 
-        ->get();
-
-    if ($tasks->isEmpty()) {
-        return ResponseFormatter::success([], 'Tidak ada task untuk collaborator ini.');
-    }
-
-    return ResponseFormatter::success($tasks, 'Berhasil mengambil data tasks.');
-}
 
     /**
      * Show the form for creating a new resource.
