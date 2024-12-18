@@ -191,6 +191,7 @@ class ProjectController extends Controller
         try {
             $project = Projects::with(['projectManager', 'teamMembers'])
                 ->where('pm_id', Auth::user()->user_id)
+                ->orderBy('project_id', 'asc')
                 ->get();
             
             $totalProject = $project->count();
@@ -288,16 +289,16 @@ class ProjectController extends Controller
      */
     public function show(string $id)
     {
-        try {
+        // try {
             $project = Projects::with(['task', 'projectManager', 'teamMembers'])->find($id);
 
             return ResponseFormatter::success(new ProjectResource($project), 'Success Get Data');
-        } catch (Exception $error) {
-            return ResponseFormatter::error([
-                'message' => 'Something went wrong',
-                'error' => $error,
-            ], 'Failed to process data', 500);
-        }
+        // } catch (Exception $error) {
+        //     return ResponseFormatter::error([
+        //         'message' => 'Something went wrong',
+        //         'error' => $error,
+        //     ], 'Failed to process data', 500);
+        // }
     }
 
     /**
@@ -339,9 +340,9 @@ class ProjectController extends Controller
 
                 // Update kolaborator jika ada data collaborator
                 $project_id = $data->project_id;
-                $data_collaborator = json_decode($request->collaborator, true);
-
-                if ($data_collaborator) {
+                
+                if ($request->collaborator) {
+                    $data_collaborator = json_decode($request->collaborator, true);
                     // Hapus kolaborator lama
                     UsersHasTeam::where('project_id', $project_id)->delete();
 
