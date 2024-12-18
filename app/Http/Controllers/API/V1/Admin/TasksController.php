@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Tasks;
 use App\Models\UsersHasTeam;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TaskResource;
@@ -26,22 +27,30 @@ class TasksController extends Controller
      */
     public function index(Request $request)
     {
-        $collaboratorId = $request->query('collaborator_id');
+        try {
+            $collaboratorId = $request->query('collaborator_id');
 
-        if (!$collaboratorId) {
-            return ResponseFormatter::error('Parameter collaborator_id harus diisi.', 400);
+            if (!$collaboratorId) {
+                return ResponseFormatter::error('Parameter collaborator_id harus diisi.', 400);
+            }
+
+            $tasks = Tasks::where('collaborator_id', $collaboratorId)
+                ->whereNull('deleted_at')
+                ->with('project')
+                ->get();
+
+            if ($tasks->isEmpty()) {
+                return ResponseFormatter::success([], 'Tidak ada task untuk collaborator ini.');
+            }
+
+            return ResponseFormatter::success($tasks, 'Berhasil mengambil data tasks.');
+        } catch (\Exception $e) {
+            Log::error('Error fetching tasks: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return ResponseFormatter::error('Terjadi kesalahan saat mengambil data tasks.', 500);
         }
-
-        $tasks = Tasks::where('collaborator_id', $collaboratorId)
-            ->whereNull('deleted_at')
-            ->with('project')
-            ->get();
-
-        if ($tasks->isEmpty()) {
-            return ResponseFormatter::success([], 'Tidak ada task untuk collaborator ini.');
-        }
-
-        return ResponseFormatter::success($tasks, 'Berhasil mengambil data tasks.');
     }
 
     /**
