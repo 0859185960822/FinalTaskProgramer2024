@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TaskResource;
+use Illuminate\Support\Facades\Auth;
 
 
 class TasksController extends Controller
@@ -28,23 +29,27 @@ class TasksController extends Controller
     public function index(Request $request)
     {
         try {
-            $collaboratorId = $request->query('collaborator_id');
+            // Mendapatkan user yang sedang login
+            $userId = Auth::user()->user_id;
 
-            if (!$collaboratorId) {
-                return ResponseFormatter::error('Parameter collaborator_id harus diisi.', 400);
-            }
-
-            $tasks = Tasks::where('collaborator_id', $collaboratorId)
-                ->whereNull('deleted_at')
-                ->with(relations: 'project')
+            // Mengambil semua task yang memiliki collaborator_id yang sama dengan user_id yang sedang login
+            $tasks = Tasks::where('collaborator_id', $userId)
+                ->with('project') // Pastikan relasi project sudah didefinisikan
                 ->get();
-
+            // dd($tasks);
+            // Memeriksa apakah tidak ada task yang ditemukan
             if ($tasks->isEmpty()) {
-                return ResponseFormatter::success([], 'Tidak ada task untuk collaborator ini.');
+                return ResponseFormatter::error([], 'Tidak ada task untuk user ini.');
             }
 
-            return ResponseFormatter::success($tasks, 'Berhasil mengambil data tasks.');
+            // Mengembalikan response success dengan data tasks
+            return ResponseFormatter::success(
+                // TaskResource::collection($tasks),
+                $tasks,
+                'Berhasil mengambil data tasks.'
+            );
         } catch (\Exception $e) {
+            // Menangani error dan mencatat log
             Log::error('Error fetching tasks: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
@@ -52,6 +57,10 @@ class TasksController extends Controller
             return ResponseFormatter::error('Terjadi kesalahan saat mengambil data tasks.', 500);
         }
     }
+
+
+
+
 
     /**
      * Show the form for creating a new resource.
