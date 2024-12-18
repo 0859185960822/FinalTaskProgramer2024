@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Tasks;
 use App\Models\UsersHasTeam;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TaskResource;
@@ -24,9 +25,32 @@ class TasksController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        try {
+            $collaboratorId = $request->query('collaborator_id');
+
+            if (!$collaboratorId) {
+                return ResponseFormatter::error('Parameter collaborator_id harus diisi.', 400);
+            }
+
+            $tasks = Tasks::where('collaborator_id', $collaboratorId)
+                ->whereNull('deleted_at')
+                ->with(relations: 'project')
+                ->get();
+
+            if ($tasks->isEmpty()) {
+                return ResponseFormatter::success([], 'Tidak ada task untuk collaborator ini.');
+            }
+
+            return ResponseFormatter::success($tasks, 'Berhasil mengambil data tasks.');
+        } catch (\Exception $e) {
+            Log::error('Error fetching tasks: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return ResponseFormatter::error('Terjadi kesalahan saat mengambil data tasks.', 500);
+        }
     }
 
     /**
@@ -66,7 +90,6 @@ class TasksController extends Controller
             $task->project_id = $validated['project_id'];
             $task->deadline = $validated['deadline'];
             $task->status_task = 'PENDING';
-            $task->created_at = now();
             $task->created_by = auth()->user()->user_id;
 
             $task->save();
@@ -198,7 +221,7 @@ class TasksController extends Controller
                 'status_task' => 'nullable|in:PENDING,IN PROGRESS,DONE',
                 'deadline' => 'nullable|date',
             ]);
-            
+
             $exists = UsersHasTeam::where('project_id', Tasks::find($task_id)->project_id)
                 ->where('user_id', $validated['collaborator_id'])
                 ->exists();
@@ -215,7 +238,6 @@ class TasksController extends Controller
             $task->collaborator_id = $validated['collaborator_id'];
             $task->status_task = $validated['status_task'] ?? 'PENDING';
             $task->deadline = $validated['deadline'] ?? $task->deadline; // Gunakan deadline lama jika tidak diubah
-            $task->updated_at = now();
             $task->updated_by = auth()->user()->user_id;
 
             $task->save();
@@ -275,13 +297,13 @@ class TasksController extends Controller
      */
     public function destroy($id)
     {
-            $task = Tasks::find($id);
-            if ($task) {
-                $task->delete();
-                return ResponseFormatter::success(null, 'Task soft deleted successfully');
-            } else {
-                return ResponseFormatter::error([], 'Task not found', 404);
-            }
+        $task = Tasks::find($id);
+        if ($task) {
+            $task->delete();
+            return ResponseFormatter::success(null, 'Task soft deleted successfully');
+        } else {
+            return ResponseFormatter::error([], 'Task not found', 404);
+        }
     }
 
     public function taskManagement(Request $request)
@@ -307,7 +329,7 @@ class TasksController extends Controller
             if ($task->isEmpty()) {
                 return ResponseFormatter::error([], 'Task not found', 404);
             }
-            
+
             return ResponseFormatter::success([
                 TaskResource::collection($task),
                 'pagination' => [

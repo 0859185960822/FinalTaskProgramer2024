@@ -29,7 +29,7 @@ class TaskResource extends JsonResource
 
         return [
             'task_id' => $this->task_id,
-            'project_id' => $this->project,
+            'project_id' => projectResource::collection($this->whenLoaded('project')),
             'collaborator_id' => [
                 'user_id' => $this->collaborator->user_id,
                 'name' => $this->collaborator->name,

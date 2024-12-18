@@ -60,26 +60,34 @@ class ConfigService
     {
         DB::beginTransaction();
         try {
-            foreach ($payload as $slug => $value) {
-                if ($slug == 'LOGO_SMALL' && $value) {
-                    $value = self::updateFoto($slug, $value);
-                } else if ($slug == 'LOGO_FULL_LIGHT' && $value) {
-                    $value = self::updateFoto($slug, $value);
-                } else if ($slug == 'LOGO_FULL_DARK' && $value) {
-                    $value = self::updateFoto($slug, $value);
-                } else if ($slug == 'LOGIN_BACKGROUND' && $value) {
-                    $value = self::updateFoto($slug, $value);
+            // $string_data = $payload['logoFullDark'];
+            foreach (json_decode($payload['valueConfigurasi']) as $value) {
+                if (($value->slug == 'LOGO_FULL_LIGHT') && ($payload['statusLogoFullLight'] == true)) {
+                    $val = self::updateFoto($value->slug, $payload['logoFullLight']);
+                    Config::where("slug", "LOGO_FULL_LIGHT")->update([
+                        'value' => $val
+                    ]);
+                } else if (($value->slug == 'LOGO_FULL_DARK') && ($payload['statusLogoFullDark'] == true)) {
+                    $val = self::updateFoto($value->slug, $payload['logoFullDark']);
+                    Config::where("slug", "LOGO_FULL_DARK")->update([
+                        'value' => $val
+                    ]);
+                } else if ($value->slug == 'LOGIN_BACKGROUND' && $payload['statusLoginBackground'] == true) {
+                    $val = self::updateFoto($value->slug, $payload['loginBackground']);
+                    Config::where("slug", 'LOGIN_BACKGROUND')->update([
+                        'value' => $val
+                    ]);
+                } else {
+                    Config::where("slug", $value->slug)->update([
+                        'value' => $value->value
+                    ]);
                 }
-
-                Config::where("slug", $slug)->update([
-                    'value' => $value
-                ]);
             }
 
             DB::commit();
             return [
                 'status' => true,
-                'data'   => "success",
+                'data' => "success",
             ];
         } catch (\Throwable $th) {
             DB::rollBack();
