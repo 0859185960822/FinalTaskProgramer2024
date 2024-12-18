@@ -36,7 +36,7 @@ class TasksController extends Controller
 
             $tasks = Tasks::where('collaborator_id', $collaboratorId)
                 ->whereNull('deleted_at')
-                ->with('project')
+                ->with(relations: 'project')
                 ->get();
 
             if ($tasks->isEmpty()) {
