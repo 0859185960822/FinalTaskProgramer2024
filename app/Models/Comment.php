@@ -21,6 +21,7 @@ class Comment extends Model
         'updated_at',
     ];
 
+    // Relasi dengan model Task (menambahkan relasi task)
     public function taskId()
     {
         return $this->belongsTo(Tasks::class, 'task_id', 'task_id');
