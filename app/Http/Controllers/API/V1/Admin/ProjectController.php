@@ -118,6 +118,7 @@ class ProjectController extends Controller
     public function filterLaporanProject(Request $request)
     {
         try {
+            $judul_proyek = $request->input('title');
             $progress = $request->input('progress');
             $statusDeadline = $request->input('status_deadline'); 
             $sisaWaktu = $request->input('sisa_waktu');
@@ -125,8 +126,13 @@ class ProjectController extends Controller
             $deadlineTo = $request->input('deadline_to'); 
 
             $projects = Projects::with(['task'])
-                ->where('pm_id', Auth::user()->user_id)
-                ->get();
+                ->where('pm_id', Auth::user()->user_id);
+
+            if ($judul_proyek) {
+                $projects = $projects->where('project_name', 'LIKE', '%' . $judul_proyek . '%');
+            }
+            
+            $projects = $projects->get(); 
 
             if ($progress !== null) {
                 $projects = $projects->filter(function ($project) use ($progress) {
