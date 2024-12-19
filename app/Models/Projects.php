@@ -34,7 +34,7 @@ class Projects extends Model
 
     public function teamMembers()
     {
-    return $this->belongsToMany(User::class, 'users_has_teams', 'project_id', 'user_id')->withTimestamps();
+    return $this->belongsToMany(User::class, 'users_has_teams', 'project_id', 'users_id')->withTimestamps();
     }
 
     public function task()
