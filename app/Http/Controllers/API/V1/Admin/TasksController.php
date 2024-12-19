@@ -7,6 +7,7 @@ use Exception;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Tasks;
+use App\Models\Comment;
 use App\Models\UsersHasTeam;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -161,7 +162,7 @@ class TasksController extends Controller
     public function show($id)
     {
         try {
-            $task = Tasks::with(['collaborator', 'project'])
+            $task = Tasks::with(['collaborator', 'project', 'comments.user'])
                 ->where('task_id', $id)
                 ->first();
 
