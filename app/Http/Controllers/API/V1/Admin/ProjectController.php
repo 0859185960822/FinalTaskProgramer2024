@@ -187,9 +187,13 @@ class ProjectController extends Controller
 
     public function index()
     {
-        try {
-            $project = Projects::with(['projectManager', 'teamMembers'])
-                ->where('pm_id', Auth::user()->user_id)
+        // try {
+            $project = Projects::with(['projectManager', 'teamMembers', 'task'])
+                ->whereHas('teamMembers', function ($query) {
+                    // Tambahkan kondisi filter untuk teamMembers
+                    $user_id = Auth::user()->user_id; // Sesuaikan sesuai kebutuhan Anda
+                    $query->where('users_id', $user_id); // Filter berdasarkan user_id atau kondisi lainnya
+                })
                 ->get();
             
             $totalProject = $project->count();
@@ -213,12 +217,12 @@ class ProjectController extends Controller
                 'project_done' => $done,
                 'data_project' => projectResource::collection($project),
             ], 'Success Get Data');
-        } catch (Exception $e) {
-            return ResponseFormatter::error([
-                'message' => 'Something went wrong',
-                'error' => $e,
-            ], 'Failed to process data', 500);
-        }
+        // } catch (Exception $e) {
+        //     return ResponseFormatter::error([
+        //         'message' => 'Something went wrong',
+        //         'error' => $e,
+        //     ], 'Failed to process data', 500);
+        // }
     }
 
 
@@ -288,7 +292,18 @@ class ProjectController extends Controller
     public function show(string $id)
     {
         try {
-            $project = Projects::with(['task', 'projectManager', 'teamMembers'])->find($id);
+            $project = Projects::with([
+                'projectManager', 
+                'teamMembers', 
+                'task' => function ($query) {
+                    // Filter task hanya jika user bukan Administrator
+                    if (!Auth::user()->userRole->pluck('role_id')->contains(1)) {
+                        $user_id = Auth::user()->user_id;
+                        $query->where('collaborator_id', $user_id);
+                    }
+                }
+            ])
+            ->find($id);
 
             return ResponseFormatter::success(new ProjectResource($project), 'Success Get Data');
         } catch (Exception $error) {
