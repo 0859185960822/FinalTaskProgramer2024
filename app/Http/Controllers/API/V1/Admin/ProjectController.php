@@ -194,13 +194,27 @@ class ProjectController extends Controller
     public function index()
     {
         try {
-            $project = Projects::with(['projectManager', 'teamMembers', 'task'])
-                ->whereHas('teamMembers', function ($query) {
-                    // Tambahkan kondisi filter untuk teamMembers
-                    $user_id = Auth::user()->user_id; // Sesuaikan sesuai kebutuhan Anda
-                    $query->where('users_id', $user_id); // Filter berdasarkan user_id atau kondisi lainnya
-                })
-                ->get();
+            $user_id = Auth::user()->user_id;
+
+            // Ambil role user login (asumsi relasi role sudah ada)
+            $userRoles = Auth::user()->userRole->pluck('role_id'); // Sesuaikan dengan relasi role
+            // dd($userRoles);
+
+            $projects = Projects::with(['projectManager', 'teamMembers']);
+
+            // Jika user adalah Project Manager
+            if ($userRoles->contains(1)) { // Asumsi role_id = 1 adalah Project Manager
+                $projects = $projects->where('pm_id', $user_id);
+            }
+
+            // Jika user adalah Collaborator
+            if ($userRoles->contains(2)) { // Asumsi role_id = 2 adalah Collaborator
+                $projects = $projects->orWhereHas('teamMembers', function ($query) use ($user_id) {
+                    $query->where('users_id', $user_id);
+                });
+            }
+
+            $project = $projects->get();
             
             $totalProject = $project->count();
             $onGoing = 0;
@@ -230,6 +244,7 @@ class ProjectController extends Controller
             ], 'Failed to process data', 500);
         }
     }
+
 
 
     /**
@@ -411,8 +426,9 @@ class ProjectController extends Controller
     public function addCollaborator(Request $request)
     {
         // Pastikan user_id dalam bentuk array
-        $user_ids = is_array($request->user_id) ? $request->user_id : json_decode($request->user_id, true);
-
+        // $user_ids = is_array($request->kolaborator_data->user_id) ? $request->kolaborator_data->user_id : json_decode($request->kolaborator_data->user_id, true);
+        $user_ids = json_decode($request->user_id);
+        // dd($user_ids);
         // Validasi data input
         $validator = Validator::make($request->all(), [
             'project_id' => 'required|exists:projects,project_id',
@@ -427,24 +443,24 @@ class ProjectController extends Controller
         }
 
         // Cek apakah user sudah terdaftar dalam project menggunakan whereIn
-        // $exists = UsersHasTeam::where('project_id', $request->project_id)
-        //     ->whereIn('user_id', $user_ids) // Menggunakan whereIn untuk memeriksa array user_id
-        //     ->exists();
+        $exists = UsersHasTeam::where('project_id', $request->project_id)
+            ->whereIn('users_id', $user_ids) // Menggunakan whereIn untuk memeriksa array user_id
+            ->exists();
 
-        // if ($exists) {
-        //     return ResponseFormatter::error([
-        //         'error' => 'User sudah terdaftar dalam project.',
-        //     ], 'Conflict', 409);
-        // }
-        UsersHasTeam::where('project_id', $request->project_id)
-            ->whereIn('user_id', $user_ids)
-            ->delete();
+        if ($exists) {
+            return ResponseFormatter::error([
+                'error' => 'User sudah terdaftar dalam project.',
+            ], 'Conflict', 409);
+        }
+        // UsersHasTeam::where('project_id', $request->project_id)
+        //     ->whereIn('users_id', $user_ids)
+        //     ->delete();
 
         // Prepare data untuk mass insert
         $newCollaborator = [];
         foreach ($user_ids as $user_id) {
             $newCollaborator[] = [
-                'user_id' => $user_id,
+                'users_id' => $user_id,
                 'project_id' => $request->project_id,
                 'created_at' => Carbon::now(),
             ];
