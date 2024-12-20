@@ -273,7 +273,7 @@ class ProjectController extends Controller
                 $dataToInsert = [];
                 foreach ($data_collaborator as $collaborators) {
                     $dataToInsert[] = [
-                        'user_id' => $collaborators->user_id,
+                        'users_id' => $collaborators->user_id,
                         'project_id' => $project_id,
                         'created_at' => now(),
                     ];
@@ -369,7 +369,7 @@ class ProjectController extends Controller
                     $dataToInsert = [];
                     foreach ($data_collaborator as $collaborator) {
                         $dataToInsert[] = [
-                            'user_id' => $collaborator['user_id'],
+                            'users_id' => $collaborator['user_id'],
                             'project_id' => $project_id,
                             'created_at' => Carbon::now(),
                             'updated_at' => Carbon::now(),
