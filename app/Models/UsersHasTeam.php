@@ -10,9 +10,9 @@ class UsersHasTeam extends Model
     use HasFactory;
     public $timestamps = true;
 
-    protected $primaryKey = 'user_id';
+    protected $primaryKey = 'users_id';
     protected $fillable = [
-        'user_id',
+        'users_id',
         'project_id',
         'created_at',
         'updated_at'
