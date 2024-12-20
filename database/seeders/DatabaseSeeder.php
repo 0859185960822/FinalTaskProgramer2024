@@ -14,6 +14,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        /**
+         * FIle ini untuk mendaftarkan masing-masing file seeder di DatabaseSeeder.php
+         * Dengan menggunakan: $this-call(Nama file seeder::class);
+        */
+
         // \App\Models\User::factory(10)->create();
         $this->call(ConfigSeeder::class);
         $this->call(UserSeeder::class);
@@ -24,6 +29,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RolePermissionSeeder::class);
         $this->call(ProjectSeeder::class);
         $this->call(TaskSeeder::class);
+        $this->call(CommentSeeder::class);
         $this->call(UserHasTeamSeeder::class);
     }
 }

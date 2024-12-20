@@ -118,6 +118,7 @@ class ProjectController extends Controller
     public function filterLaporanProject(Request $request)
     {
         try {
+            $judul_proyek = $request->input('title');
             $progress = $request->input('progress');
             $statusDeadline = $request->input('status_deadline'); 
             $sisaWaktu = $request->input('sisa_waktu');
@@ -125,8 +126,13 @@ class ProjectController extends Controller
             $deadlineTo = $request->input('deadline_to'); 
 
             $projects = Projects::with(['task'])
-                ->where('pm_id', Auth::user()->user_id)
-                ->get();
+                ->where('pm_id', Auth::user()->user_id);
+
+            if ($judul_proyek) {
+                $projects = $projects->where('project_name', 'LIKE', '%' . $judul_proyek . '%');
+            }
+            
+            $projects = $projects->get(); 
 
             if ($progress !== null) {
                 $projects = $projects->filter(function ($project) use ($progress) {
@@ -188,9 +194,12 @@ class ProjectController extends Controller
     public function index()
     {
         try {
-            $project = Projects::with(['projectManager', 'teamMembers'])
-                ->where('pm_id', Auth::user()->user_id)
-                ->orderBy('project_id', 'asc')
+            $project = Projects::with(['projectManager', 'teamMembers', 'task'])
+                ->whereHas('teamMembers', function ($query) {
+                    // Tambahkan kondisi filter untuk teamMembers
+                    $user_id = Auth::user()->user_id; // Sesuaikan sesuai kebutuhan Anda
+                    $query->where('users_id', $user_id); // Filter berdasarkan user_id atau kondisi lainnya
+                })
                 ->get();
             
             $totalProject = $project->count();
@@ -212,7 +221,7 @@ class ProjectController extends Controller
                 'total_project' => $totalProject,
                 'project_on_going' => $onGoing,
                 'project_done' => $done,
-                'data_project' => projectResource::collection($project),
+                'data_project' => $project
             ], 'Success Get Data');
         } catch (Exception $e) {
             return ResponseFormatter::error([
@@ -288,8 +297,19 @@ class ProjectController extends Controller
      */
     public function show(string $id)
     {
-        // try {
-            $project = Projects::with(['task', 'projectManager', 'teamMembers'])->find($id);
+        try {
+            $project = Projects::with([
+                'projectManager', 
+                'teamMembers', 
+                'task' => function ($query) {
+                    // Filter task hanya jika user bukan Administrator
+                    if (!Auth::user()->userRole->pluck('role_id')->contains(1)) {
+                        $user_id = Auth::user()->user_id;
+                        $query->where('collaborator_id', $user_id);
+                    }
+                }
+            ])
+            ->find($id);
 
             return ResponseFormatter::success(new ProjectResource($project), 'Success Get Data');
         // } catch (Exception $error) {
@@ -450,10 +470,13 @@ class ProjectController extends Controller
                 $perPage = 5;
             }
 
-            $user_id = auth()->user()->user_id;
-
-            // Query awal untuk memfilter berdasarkan PM ID
-            $query = Projects::where('pm_id', $user_id);
+            // Query awal untuk memfilter berdasarkan User Yang Login
+            $query = Projects::with(['projectManager', 'teamMembers', 'task'])
+            ->whereHas('teamMembers', function ($query) {
+                // Tambahkan kondisi filter untuk teamMembers
+                $user_id = Auth::user()->user_id; // Sesuaikan sesuai kebutuhan Anda
+                $query->where('users_id', $user_id); // Filter berdasarkan user_id atau kondisi lainnya
+            });
 
             // Eksekusi query
             $project = $query->latest()->paginate($perPage);
@@ -464,9 +487,8 @@ class ProjectController extends Controller
             }
 
             // Return response
-            // return ResponseFormatter::success(projectResource::collection($project), 'Success Get Data');
             return ResponseFormatter::success([
-                projectResource::collection($project),
+                'data_project' => projectResource::collection($project),
                 'pagination' => [
                     'total' => $project->total(),
                     'per_page' => $project->perPage(),
