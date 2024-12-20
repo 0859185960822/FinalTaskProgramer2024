@@ -83,7 +83,7 @@ class TasksController extends Controller
                 'deadline' => 'required|date'
             ]);
             $exists = UsersHasTeam::where('project_id', $validated['project_id'])
-                ->where('user_id', $validated['collaborator_id'])
+                ->where('users_id', $validated['collaborator_id'])
                 ->exists();
 
             if (!$exists) {
@@ -233,7 +233,7 @@ class TasksController extends Controller
             ]);
 
             $exists = UsersHasTeam::where('project_id', Tasks::find($task_id)->project_id)
-                ->where('user_id', $validated['collaborator_id'])
+                ->where('users_id', $validated['collaborator_id'])
                 ->exists();
 
             if (!$exists) {
