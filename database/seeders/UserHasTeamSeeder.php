@@ -17,7 +17,7 @@ class UserHasTeamSeeder extends Seeder
         $project_id = \App\Models\Projects::first();
         $user_id = \App\Models\User::first();
         DB::table('users_has_teams')->insert([
-            'user_id'       => $user_id->user_id,
+            'users_id'       => $user_id->user_id,
             'project_id'    => $project_id->project_id,
             'created_at'     => Carbon::now(),
         ]);
