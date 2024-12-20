@@ -288,7 +288,7 @@ class ProjectController extends Controller
                 $dataToInsert = [];
                 foreach ($data_collaborator as $collaborators) {
                     $dataToInsert[] = [
-                        'users_id' => $collaborators->user_id,
+                        'users_id' => $collaborators->kolaborator_data->user_id,
                         'project_id' => $project_id,
                         'created_at' => now(),
                     ];
