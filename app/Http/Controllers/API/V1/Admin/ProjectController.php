@@ -437,14 +437,14 @@ class ProjectController extends Controller
         //     ], 'Conflict', 409);
         // }
         UsersHasTeam::where('project_id', $request->project_id)
-            ->whereIn('user_id', $user_ids)
+            ->whereIn('users_id', $user_ids)
             ->delete();
 
         // Prepare data untuk mass insert
         $newCollaborator = [];
         foreach ($user_ids as $user_id) {
             $newCollaborator[] = [
-                'user_id' => $user_id,
+                'users_id' => $user_id,
                 'project_id' => $request->project_id,
                 'created_at' => Carbon::now(),
             ];
