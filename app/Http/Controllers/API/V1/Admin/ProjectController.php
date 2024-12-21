@@ -374,9 +374,9 @@ class ProjectController extends Controller
 
                 // Update kolaborator jika ada data collaborator
                 $project_id = $data->project_id;
-                $data_collaborator = json_decode($request->collaborator, true);
-
-                if ($data_collaborator) {
+                
+                if ($request->collaborator) {
+                    $data_collaborator = json_decode($request->collaborator, true);
                     // Hapus kolaborator lama
                     UsersHasTeam::where('project_id', $project_id)->delete();
 
@@ -486,16 +486,28 @@ class ProjectController extends Controller
                 $perPage = 5;
             }
 
-            // Query awal untuk memfilter berdasarkan User Yang Login
-            $query = Projects::with(['projectManager', 'teamMembers', 'task'])
-            ->whereHas('teamMembers', function ($query) {
-                // Tambahkan kondisi filter untuk teamMembers
-                $user_id = Auth::user()->user_id; // Sesuaikan sesuai kebutuhan Anda
-                $query->where('users_id', $user_id); // Filter berdasarkan user_id atau kondisi lainnya
-            });
+            $user_id = Auth::user()->user_id;
+
+            // Ambil role user login (asumsi relasi role sudah ada)
+            $userRoles = Auth::user()->userRole->pluck('role_id'); // Sesuaikan dengan relasi role
+            // dd($userRoles);
+
+            $projects = Projects::with(['projectManager', 'teamMembers']);
+
+            // Jika user adalah Project Manager
+            if ($userRoles->contains(1)) { // Asumsi role_id = 1 adalah Project Manager
+                $projects = $projects->where('pm_id', $user_id);
+            }
+
+            // Jika user adalah Collaborator
+            if ($userRoles->contains(2)) { // Asumsi role_id = 2 adalah Collaborator
+                $projects = $projects->orWhereHas('teamMembers', function ($query) use ($user_id) {
+                    $query->where('users_id', $user_id);
+                });
+            }
 
             // Eksekusi query
-            $project = $query->latest()->paginate($perPage);
+            $project = $projects->latest()->paginate($perPage);
 
             // Cek jika data kosong
             if ($project->isEmpty()) {
