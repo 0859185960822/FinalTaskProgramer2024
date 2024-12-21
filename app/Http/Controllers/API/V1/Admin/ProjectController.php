@@ -200,7 +200,7 @@ class ProjectController extends Controller
             $userRoles = Auth::user()->userRole->pluck('role_id'); // Sesuaikan dengan relasi role
             // dd($userRoles);
 
-            $projects = Projects::with(['projectManager', 'teamMembers']);
+            $projects = Projects::with(['projectManager', 'teamMembers','task']);
 
             // Jika user adalah Project Manager
             if ($userRoles->contains(1)) { // Asumsi role_id = 1 adalah Project Manager
@@ -235,7 +235,7 @@ class ProjectController extends Controller
                 'total_project' => $totalProject,
                 'project_on_going' => $onGoing,
                 'project_done' => $done,
-                'data_project' => $project
+                'data_project' => projectResource::collection($project)
             ], 'Success Get Data');
         } catch (Exception $e) {
             return ResponseFormatter::error([
@@ -599,7 +599,7 @@ class ProjectController extends Controller
             }
 
             return ResponseFormatter::success([
-                projectResource::collection($project),
+                'data_project' => projectResource::collection($project),
                 'pagination' => [
                     'total' => $project->total(),
                     'per_page' => $project->perPage(),

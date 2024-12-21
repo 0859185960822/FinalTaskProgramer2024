@@ -98,6 +98,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/', [TasksController::class, 'index'])->middleware('auth.api');
         Route::post('/', [TasksController::class, 'store'])->middleware('auth.api');
         Route::get('/get-collaborators', [TasksController::class, 'getCollaborators'])->middleware('auth.api');
+        Route::get('/get-collaborators/{project_id}', [TasksController::class, 'getCollaboratorsByProject'])->middleware('auth.api');
         Route::get('/{id}', [TasksController::class, 'show'])->middleware('auth.api');
         Route::put('/{task_id}', [TasksController::class, 'edit'])->middleware('auth.api');
         Route::delete('/{id}', [TasksController::class, 'destroy'])->middleware('auth.api');

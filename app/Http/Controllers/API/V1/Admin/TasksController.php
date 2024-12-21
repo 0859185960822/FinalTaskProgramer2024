@@ -385,4 +385,29 @@ class TasksController extends Controller
         // Return response
         return ResponseFormatter::success(TaskResource::collection($task), 'Success Get Data');
     }
+
+    public function getCollaboratorsByProject($projectId)
+    {
+        try {
+            // Ambil kolaborator yang terdaftar dalam proyek tertentu
+        $collaborators = User::where('status', 'ENABLE')
+                    ->whereHas('teams', function ($query) use ($projectId) {
+                        $query->where('users_has_teams.project_id', $projectId); // Ganti 'project_id' dengan nama kolom yang sesuai
+                    })
+                    ->select('user_id', 'name')
+                    ->orderBy('name', 'ASC')
+                    ->get();
+                    
+            return ResponseFormatter::success(
+                $collaborators,
+                'Collaborators retrieved successfully'
+            );
+        } catch (\Exception $e) {
+            return ResponseFormatter::error(
+                ['error' => $e->getMessage()],
+                'Failed to retrieve collaborators',
+                500
+            );
+        }
+    }
 }
