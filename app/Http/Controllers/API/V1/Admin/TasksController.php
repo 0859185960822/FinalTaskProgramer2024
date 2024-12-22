@@ -8,10 +8,11 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Tasks;
 use App\Models\Comment;
+use App\Models\Projects;
 use App\Models\UsersHasTeam;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use App\Helpers\ResponseFormatter;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TaskResource;
 use Illuminate\Support\Facades\Auth;
@@ -365,24 +366,61 @@ class TasksController extends Controller
         // Ambil parameter pencarian global dari request
         $search = $request->input('search'); // Input pencarian global
         $user_id = auth()->user()->user_id;
+        $project_id = $request->project_id;
+        $project = Projects::where('project_id', $project_id)->first();
 
-        // Query awal untuk memfilter berdasarkan Collaborator ID
-        $query = Tasks::where(function ($subQuery) use ($user_id, $search) {
-            $subQuery->where('collaborator_id', $user_id)
-                ->where(function ($innerQuery) use ($search) {
-                    $innerQuery->where('task_name', 'LIKE', "%{$search}%");
+        if ($project){
+            if ($project->pm_id == $user_id) {
+                // Jika user adalah PM, ambil semua task berdasarkan project_id dan filter pencarian
+                $query = Tasks::where('project_id', $project->project_id)
+                ->where(function ($subQuery) use ($search) {
+                    $subQuery->where('task_name', 'LIKE', "%{$search}%");
                 });
-        });
+            } else {
+                 // Jika user bukan PM, ambil task berdasarkan collaborator_id
+                $query = Tasks::where('project_id', $project->project_id)
+                ->where('collaborator_id', $user_id)
+                ->where(function ($subQuery) use ($search) {
+                    $subQuery->where('task_name', 'LIKE', "%{$search}%");
+                });
+        }
+        } else {
+            return ResponseFormatter::error([], 'Project not found', 404);
+        }
+        
 
         // Eksekusi query
         $task = $query->get();
-
         // Cek jika data kosong
         if ($task->isEmpty()) {
             return ResponseFormatter::error([], 'Task not found', 404);
         }
-
         // Return response
         return ResponseFormatter::success(TaskResource::collection($task), 'Success Get Data');
+    }
+
+    public function getCollaboratorsByProject($projectId)
+    {
+        try {
+            // Ambil kolaborator yang terdaftar dalam proyek tertentu
+        $collaborators = User::where('status', 'ENABLE')
+                    ->whereHas('teams', function ($query) use ($projectId) {
+                        $query->where('users_has_teams.project_id', $projectId); // Ganti 'project_id' dengan nama kolom yang sesuai
+                    })
+                    ->select('user_id', 'name')
+                    ->orderBy('name', 'ASC')
+                    ->get();
+                    
+            return ResponseFormatter::success(
+                $collaborators,
+                'Collaborators retrieved successfully'
+            );
+        } catch (\Exception $e) {
+            return ResponseFormatter::error(
+                ['error' => $e->getMessage()],
+                'Failed to retrieve collaborators',
+                500
+            );
+        }
     }
 }
