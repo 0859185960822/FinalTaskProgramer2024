@@ -60,7 +60,7 @@ class projectResource extends JsonResource
             'task_done' => $doneTasks,
             'task_pending' => $pendingTasks,
             'task_on_going' => $onGoingTasks,
-            'progress_project' => $progress_project . '%',
+            'progress_project' => $progress_project,
             'status_deadline' => $deadline
         ];
     }

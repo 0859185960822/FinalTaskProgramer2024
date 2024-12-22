@@ -194,13 +194,27 @@ class ProjectController extends Controller
     public function index()
     {
         try {
-            $project = Projects::with(['projectManager', 'teamMembers', 'task'])
-                ->whereHas('teamMembers', function ($query) {
-                    // Tambahkan kondisi filter untuk teamMembers
-                    $user_id = Auth::user()->user_id; // Sesuaikan sesuai kebutuhan Anda
-                    $query->where('users_id', $user_id); // Filter berdasarkan user_id atau kondisi lainnya
-                })
-                ->get();
+            $user_id = Auth::user()->user_id;
+
+            // Ambil role user login (asumsi relasi role sudah ada)
+            $userRoles = Auth::user()->userRole->pluck('role_id'); // Sesuaikan dengan relasi role
+            // dd($userRoles);
+
+            $projects = Projects::with(['projectManager', 'teamMembers','task']);
+
+            // Jika user adalah Project Manager
+            if ($userRoles->contains(1)) { // Asumsi role_id = 1 adalah Project Manager
+                $projects = $projects->where('pm_id', $user_id);
+            }
+
+            // Jika user adalah Collaborator
+            if ($userRoles->contains(2)) { // Asumsi role_id = 2 adalah Collaborator
+                $projects = $projects->orWhereHas('teamMembers', function ($query) use ($user_id) {
+                    $query->where('users_id', $user_id);
+                });
+            }
+
+            $project = $projects->get();
             
             $totalProject = $project->count();
             $onGoing = 0;
@@ -221,7 +235,7 @@ class ProjectController extends Controller
                 'total_project' => $totalProject,
                 'project_on_going' => $onGoing,
                 'project_done' => $done,
-                'data_project' => $project
+                'data_project' => projectResource::collection($project)
             ], 'Success Get Data');
         } catch (Exception $e) {
             return ResponseFormatter::error([
@@ -230,6 +244,7 @@ class ProjectController extends Controller
             ], 'Failed to process data', 500);
         }
     }
+
 
 
     /**
@@ -273,7 +288,7 @@ class ProjectController extends Controller
                 $dataToInsert = [];
                 foreach ($data_collaborator as $collaborators) {
                     $dataToInsert[] = [
-                        'users_id' => $collaborators->user_id,
+                        'users_id' => $collaborators->kolaborator_data->user_id,
                         'project_id' => $project_id,
                         'created_at' => now(),
                     ];
@@ -359,9 +374,9 @@ class ProjectController extends Controller
 
                 // Update kolaborator jika ada data collaborator
                 $project_id = $data->project_id;
-                $data_collaborator = json_decode($request->collaborator, true);
-
-                if ($data_collaborator) {
+                
+                if ($request->collaborator) {
+                    $data_collaborator = json_decode($request->collaborator, true);
                     // Hapus kolaborator lama
                     UsersHasTeam::where('project_id', $project_id)->delete();
 
@@ -411,8 +426,9 @@ class ProjectController extends Controller
     public function addCollaborator(Request $request)
     {
         // Pastikan user_id dalam bentuk array
-        $user_ids = is_array($request->user_id) ? $request->user_id : json_decode($request->user_id, true);
-
+        // $user_ids = is_array($request->kolaborator_data->user_id) ? $request->kolaborator_data->user_id : json_decode($request->kolaborator_data->user_id, true);
+        $user_ids = json_decode($request->user_id);
+        // dd($user_ids);
         // Validasi data input
         $validator = Validator::make($request->all(), [
             'project_id' => 'required|exists:projects,project_id',
@@ -427,18 +443,18 @@ class ProjectController extends Controller
         }
 
         // Cek apakah user sudah terdaftar dalam project menggunakan whereIn
-        // $exists = UsersHasTeam::where('project_id', $request->project_id)
-        //     ->whereIn('user_id', $user_ids) // Menggunakan whereIn untuk memeriksa array user_id
-        //     ->exists();
+        $exists = UsersHasTeam::where('project_id', $request->project_id)
+            ->whereIn('users_id', $user_ids) // Menggunakan whereIn untuk memeriksa array user_id
+            ->exists();
 
-        // if ($exists) {
-        //     return ResponseFormatter::error([
-        //         'error' => 'User sudah terdaftar dalam project.',
-        //     ], 'Conflict', 409);
-        // }
-        UsersHasTeam::where('project_id', $request->project_id)
-            ->whereIn('users_id', $user_ids)
-            ->delete();
+        if ($exists) {
+            return ResponseFormatter::error([
+                'error' => 'User sudah terdaftar dalam project.',
+            ], 'Conflict', 409);
+        }
+        // UsersHasTeam::where('project_id', $request->project_id)
+        //     ->whereIn('users_id', $user_ids)
+        //     ->delete();
 
         // Prepare data untuk mass insert
         $newCollaborator = [];
@@ -470,16 +486,28 @@ class ProjectController extends Controller
                 $perPage = 5;
             }
 
-            // Query awal untuk memfilter berdasarkan User Yang Login
-            $query = Projects::with(['projectManager', 'teamMembers', 'task'])
-            ->whereHas('teamMembers', function ($query) {
-                // Tambahkan kondisi filter untuk teamMembers
-                $user_id = Auth::user()->user_id; // Sesuaikan sesuai kebutuhan Anda
-                $query->where('users_id', $user_id); // Filter berdasarkan user_id atau kondisi lainnya
-            });
+            $user_id = Auth::user()->user_id;
+
+            // Ambil role user login (asumsi relasi role sudah ada)
+            $userRoles = Auth::user()->userRole->pluck('role_id'); // Sesuaikan dengan relasi role
+            // dd($userRoles);
+
+            $projects = Projects::with(['projectManager', 'teamMembers']);
+
+            // Jika user adalah Project Manager
+            if ($userRoles->contains(1)) { // Asumsi role_id = 1 adalah Project Manager
+                $projects = $projects->where('pm_id', $user_id);
+            }
+
+            // Jika user adalah Collaborator
+            if ($userRoles->contains(2)) { // Asumsi role_id = 2 adalah Collaborator
+                $projects = $projects->orWhereHas('teamMembers', function ($query) use ($user_id) {
+                    $query->where('users_id', $user_id);
+                });
+            }
 
             // Eksekusi query
-            $project = $query->latest()->paginate($perPage);
+            $project = $projects->latest()->paginate($perPage);
 
             // Cek jika data kosong
             if ($project->isEmpty()) {
@@ -571,7 +599,7 @@ class ProjectController extends Controller
             }
 
             return ResponseFormatter::success([
-                projectResource::collection($project),
+                'data_project' => projectResource::collection($project),
                 'pagination' => [
                     'total' => $project->total(),
                     'per_page' => $project->perPage(),
