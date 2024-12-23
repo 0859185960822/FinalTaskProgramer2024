@@ -87,6 +87,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/add-collaborator', [ProjectController::class, 'addCollaborator'])->middleware(['auth.api']);
         Route::get('/projects/export', [ProjectController::class, 'exportToExcel']);
     });
+
     Route::get('/project-management', [ProjectController::class, 'projectManagement'])->middleware(['auth.api'])->name('projectManagement');
     Route::post('/project-management/search', [ProjectController::class, 'SearchProjectManagement'])->middleware(['auth.api'])->name('projectManagement.search');
     Route::get('/laporan-project', [ProjectController::class, 'laporanProject'])->middleware(['auth.api'])->name('laporanProject');
@@ -102,9 +103,15 @@ Route::prefix('v1')->group(function () {
         Route::get('/{id}', [TasksController::class, 'show'])->middleware('auth.api');
         Route::put('/{task_id}', [TasksController::class, 'edit'])->middleware('auth.api');
         Route::delete('/{id}', [TasksController::class, 'destroy'])->middleware('auth.api');
-        Route::post('/comment', [CommentController::class, 'store'])->middleware(['auth.api'])->name('getComment');
-        Route::get('/{id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('addComment');
+        Route::post('/{task_id}/comment', [CommentController::class, 'store'])->middleware(['auth.api'])->name('postComment');
+        Route::get('/{id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('getComment');
     });
-    Route::get('/task-management', [TasksController::class, 'taskManagement'])->middleware(['auth.api'])->name('taskManagement');
-    Route::post('/task-management/search', [TasksController::class, 'searchTaskManagement'])->middleware(['auth.api'])->name('taskManagement.search');
+
+
+    Route::prefix('task-management')->group(function () 
+    {
+        Route::get('/', [TasksController::class, 'taskManagement'])->middleware(['auth.api'])->name('taskManagement');
+        Route::post('/search', [TasksController::class, 'searchTaskManagement'])->middleware(['auth.api'])->name('taskManagement.search');
+    });
+
 });
