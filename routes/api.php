@@ -98,13 +98,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/', [TasksController::class, 'index'])->middleware('auth.api');
         Route::post('/', [TasksController::class, 'store'])->middleware('auth.api');
         Route::get('/get-collaborators', [TasksController::class, 'getCollaborators'])->middleware('auth.api');
-        Route::get('/get-collaborators/{project_id}', [TasksController::class, 'getCollaboratorsByProject'])->middleware('auth.api');
+        Route::get('/get-collaborators/{project_id}', [TasksController::class, 'getCollaboratorsByProject'])->middleware('auth.api')->name('getCollaboratorTask');
         Route::get('/{id}', [TasksController::class, 'show'])->middleware('auth.api');
         Route::put('/{task_id}', [TasksController::class, 'edit'])->middleware('auth.api');
         Route::delete('/{id}', [TasksController::class, 'destroy'])->middleware('auth.api');
         Route::post('/comment', [CommentController::class, 'store'])->middleware(['auth.api'])->name('getComment');
         Route::get('/{id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('addComment');
     });
-    Route::get('/task-management', [TasksController::class, 'taskManagement'])->middleware(['auth.api'])->name('taskManagement');
+    Route::get('/task-management/{project_id}', [TasksController::class, 'taskManagement'])->middleware(['auth.api'])->name('taskManagement');
     Route::post('/task-management/search', [TasksController::class, 'searchTaskManagement'])->middleware(['auth.api'])->name('taskManagement.search');
 });

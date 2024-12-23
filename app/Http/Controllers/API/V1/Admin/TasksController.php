@@ -317,24 +317,50 @@ class TasksController extends Controller
         }
     }
 
-    public function taskManagement(Request $request)
+    public function taskManagement(Request $request, $project_id)
     {
         try {
             $perPage = $request->get('per_page', 5);
+             // Ambil parameter pencarian global dari request
+            $search = $request->input('search'); // Input pencarian global
 
+            
             // Validasi perPage
             $perPageOptions = [5, 10, 15, 20, 50];
             if (!in_array($perPage, $perPageOptions)) {
                 $perPage = 5;
             }
-
+            
             $user_id = auth()->user()->user_id;
 
-            // Query awal untuk memfilter berdasarkan PM ID
-            $query = Tasks::where('collaborator_id', $user_id);
+
+            if ($search) {
+                $tasks = Tasks::where('project_id', $project_id)
+                ->where('collaborator_id', $user_id)
+                ->where(function ($subQuery) use ($search) {
+                    $subQuery->where('task_name', 'LIKE', "%{$search}%");
+                });
+            }
+            // Ambil role user login (asumsi relasi role sudah ada)
+            $userRoles = Auth::user()->userRole->pluck('role_id'); // Sesuaikan dengan relasi role
+            // dd($userRoles);
+
+            $tasks = Tasks::with(['collaborator','comments']);
+
+            
+            if ($userRoles->contains(1)) { // Asumsi role_id = 1 adalah Project Manager
+                // Ambil semua task
+                $tasks = $tasks->where('project_id', $project_id);
+            }
+            // Jika user adalah Collaborator
+            elseif ($userRoles->contains(2)) { // Asumsi role_id = 2 adalah Collaborator
+                // Ambil task yang hanya dimiliki oleh collaborator tersebut
+                    $tasks->where('collaborator_id', $user_id)->where('project_id', $project_id);
+            }
 
             // Eksekusi query
-            $task = $query->latest()->paginate($perPage);
+            $task = $tasks->latest()->paginate($perPage);
+            // dd($task);
 
             // Cek jika data kosong
             if ($task->isEmpty()) {
@@ -342,7 +368,7 @@ class TasksController extends Controller
             }
 
             return ResponseFormatter::success([
-                TaskResource::collection($task),
+                'data_task' =>TaskResource::collection($task),
                 'pagination' => [
                     'total' => $task->total(),
                     'per_page' => $task->perPage(),
