@@ -417,12 +417,10 @@ class TasksController extends Controller
 
         // Eksekusi query
         $task = $query->get();
-
         // Cek jika data kosong
         if ($task->isEmpty()) {
             return ResponseFormatter::error([], 'Task not found', 404);
         }
-
         // Return response
         return ResponseFormatter::success(TaskResource::collection($task), 'Success Get Data');
     }
@@ -449,6 +447,41 @@ class TasksController extends Controller
                 'Failed to retrieve collaborators',
                 500
             );
+        }
+    }
+
+    public function statusTask(Request $request,$task_id)
+    {
+        try {
+             // Cari task berdasarkan task_id
+        $task = Tasks::find($task_id);
+
+        if (!$task) {
+            return ResponseFormatter::error([
+                'message' => 'Task not found',
+            ], 'Failed to update task status', 404);
+        }
+
+        // Periksa apakah ada input status di request
+        if ($request->has('status')) {
+            // Validasi input status hanya jika tersedia
+            $request->validate([
+                'status' => 'in:PENDING,ONGOING,DONE', // Hanya menerima nilai valid
+            ]);
+
+            // Perbarui status jika ada input valid
+            $task->status_task = $request->input('status');
+        }
+
+        // Simpan perubahan
+        $task->save();
+
+        return ResponseFormatter::success($task, 'Task status updated successfully');
+        } catch (Exception $e) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage(),
+            ], 'Failed to update task status', 500);
         }
     }
 }
