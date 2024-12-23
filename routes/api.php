@@ -81,9 +81,9 @@ Route::prefix('v1')->group(function () {
         // Route::get('/projects/export', [ProjectController::class, 'exportProjects']);
         Route::get('/projects/filter', [ProjectController::class, 'filterLaporanProject'])->middleware(['auth.api']);
         Route::get('/', [ProjectController::class, 'index'])->middleware(['auth.api']);
-        Route::get('/{id}', [ProjectController::class, 'show'])->middleware(['auth.api']);
+        Route::get('/{project_id}', [ProjectController::class, 'show'])->middleware(['auth.api']);
         Route::put('/{project_id}', [ProjectController::class, 'update'])->middleware(['auth.api']);
-        Route::delete('/{id}', [ProjectController::class, 'destroy'])->middleware(['auth.api']);
+        Route::delete('/{project_id}', [ProjectController::class, 'destroy'])->middleware(['auth.api']);
         Route::post('/add-collaborator', [ProjectController::class, 'addCollaborator'])->middleware(['auth.api']);
         Route::get('/projects/export', [ProjectController::class, 'exportToExcel']);
     });
@@ -100,11 +100,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/', [TasksController::class, 'store'])->middleware('auth.api');
         Route::get('/get-collaborators', [TasksController::class, 'getCollaborators'])->middleware('auth.api');
         Route::get('/get-collaborators/{project_id}', [TasksController::class, 'getCollaboratorsByProject'])->middleware('auth.api');
-        Route::get('/{id}', [TasksController::class, 'show'])->middleware('auth.api');
+        Route::get('/{task_id}', [TasksController::class, 'show'])->middleware('auth.api');
         Route::put('/{task_id}', [TasksController::class, 'edit'])->middleware('auth.api');
-        Route::delete('/{id}', [TasksController::class, 'destroy'])->middleware('auth.api');
-        Route::post('/{task_id}/comment', [CommentController::class, 'store'])->middleware(['auth.api'])->name('postComment');
-        Route::get('/{id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('getComment');
+        Route::delete('/{task_id}', [TasksController::class, 'destroy'])->middleware('auth.api');
+        Route::post('/comment', [CommentController::class, 'store'])->middleware(['auth.api'])->name('getComment');
+        Route::get('/{task_id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('addComment');
+        Route::put('/{task_id}/status-task', [TasksController::class, 'statusTask'])->middleware(['auth.api']);
     });
 
 
