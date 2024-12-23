@@ -105,13 +105,13 @@ Route::prefix('v1')->group(function () {
         Route::delete('/{task_id}', [TasksController::class, 'destroy'])->middleware('auth.api');
         Route::post('/{task_id}/comment', [CommentController::class, 'store'])->middleware(['auth.api'])->name('addComment');
         Route::get('/{task_id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('getComment');
-        Route::put('/{task_id}/status-task', [TasksController::class, 'statusTask'])->middleware(['auth.api']);
+        Route::post('/{task_id}/status-task', [TasksController::class, 'statusTask'])->middleware(['auth.api']);
     });
 
 
     Route::prefix('task-management')->group(function () 
     {
-        Route::get('/', [TasksController::class, 'taskManagement'])->middleware(['auth.api'])->name('taskManagement');
+        Route::get('/{project_id}', [TasksController::class, 'taskManagement'])->middleware(['auth.api'])->name('taskManagement');
         Route::post('/search', [TasksController::class, 'searchTaskManagement'])->middleware(['auth.api'])->name('taskManagement.search');
     });
 
