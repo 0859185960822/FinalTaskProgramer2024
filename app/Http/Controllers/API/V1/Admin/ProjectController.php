@@ -509,7 +509,6 @@ class ProjectController extends Controller
                     'per_page' => $project->perPage(),
                     'current_page' => $project->currentPage(),
                     'from' => $project->firstItem(),
-                    'links' => $project->linkCollection(),
                     'links' => $this->linkCollection($project),
                     'to' => $project->lastItem(),
                     'next_page_url' => $project->nextPageUrl(),
