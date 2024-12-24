@@ -18,6 +18,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use Illuminate\Support\Facades\Response;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProjectExport;
+use App\Traits\PaginationHelper;
 
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -34,10 +35,12 @@ class ProjectController extends Controller
      *
      * @response array{data: ProjectResource[], meta: array{permissions: bool}}
      */
+    use PaginationHelper;
 
     public function exportToExcel(Request $request)
     {
         try {
+            // Ambil input dari request
             $judul_proyek = $request->input('title');
             $progress = $request->input('progress');
             $statusDeadline = $request->input('status_deadline');
@@ -45,61 +48,59 @@ class ProjectController extends Controller
             $deadlineFrom = $request->input('deadline_from');
             $deadlineTo = $request->input('deadline_to');
 
-            // Mendapatkan data proyek dengan filter
-            $projects = Projects::with(['task'])
+            // Query awal tanpa memfilter status_deadline
+            $projectsQuery = Projects::with(['task', 'projectManager', 'teamMembers'])
                 ->where('pm_id', Auth::user()->user_id);
 
+            // Filter berdasarkan title (case insensitive)
             if ($judul_proyek) {
-                $projects = $projects->where('project_name', 'LIKE', '%' . $judul_proyek . '%');
+                $projectsQuery->whereRaw('LOWER(project_name) LIKE ?', ['%' . strtolower($judul_proyek) . '%']);
             }
 
-            $projects = $projects->get();
-
-            if ($progress !== null) {
-                $projects = $projects->filter(function ($project) use ($progress) {
-                    $totalTasks = $project->task->count();
-                    $doneTasks = $project->task->where('status_task', 'DONE')->count();
-                    $calculatedProgress = $totalTasks > 0 ? ($doneTasks / $totalTasks) * 100 : 0;
-
-                    return round($calculatedProgress) == $progress;
-                });
-            }
-
+            // Filter berdasarkan status_deadline
             if ($statusDeadline) {
-                $projects = $projects->filter(function ($project) use ($statusDeadline) {
-                    $isLate = \Carbon\Carbon::parse($project->deadline)->isPast();
-                    return $statusDeadline === 'tepat waktu' ? !$isLate : $isLate;
+                $projectsQuery->where(function ($query) use ($statusDeadline) {
+                    $query->whereRaw('DATE(deadline) < NOW()')
+                        ->when($statusDeadline === 'tepat waktu', function ($query) {
+                            return $query->whereRaw('DATE(deadline) >= NOW()');
+                        });
                 });
             }
 
+            // Filter berdasarkan progress
+            if ($progress !== null) {
+                $projectsQuery->whereHas('task', function ($query) use ($progress) {
+                    $query->selectRaw('COUNT(*) as total_tasks, SUM(CASE WHEN status_task = "DONE" THEN 1 ELSE 0 END) as done_tasks')
+                        ->groupBy('project_id')
+                        ->havingRaw('ROUND((done_tasks / total_tasks) * 100) = ?', [$progress]);
+                });
+            }
+
+            // Filter berdasarkan sisa waktu
             if ($sisaWaktu !== null) {
-                $projects = $projects->filter(function ($project) use ($sisaWaktu) {
-                    $remainingDays = now()->diffInDays($project->deadline, false);
-                    return $remainingDays == $sisaWaktu;
+                $projectsQuery->whereHas('task', function ($query) use ($sisaWaktu) {
+                    $query->selectRaw('project_id, DATEDIFF(deadline, NOW()) as remaining_days')
+                        ->havingRaw('remaining_days = ?', [$sisaWaktu]);
                 });
             }
 
+            // Filter berdasarkan rentang tanggal deadline
             if ($deadlineFrom || $deadlineTo) {
-                $projects = $projects->filter(function ($project) use ($deadlineFrom, $deadlineTo) {
-                    $deadline = Carbon::parse($project->deadline);
-
+                $projectsQuery->where(function ($query) use ($deadlineFrom, $deadlineTo) {
                     if ($deadlineFrom && $deadlineTo) {
-                        return $deadline->between($deadlineFrom, $deadlineTo);
+                        $query->whereBetween('deadline', [$deadlineFrom, $deadlineTo]);
+                    } elseif ($deadlineFrom) {
+                        $query->where('deadline', '>=', $deadlineFrom);
+                    } elseif ($deadlineTo) {
+                        $query->where('deadline', '<=', $deadlineTo);
                     }
-
-                    if ($deadlineFrom) {
-                        return $deadline->greaterThanOrEqualTo($deadlineFrom);
-                    }
-
-                    if ($deadlineTo) {
-                        return $deadline->lessThanOrEqualTo($deadlineTo);
-                    }
-
-                    return true;
                 });
             }
 
-            // Generate Excel file
+            // Ambil hasil dari query yang sudah difilter
+            $projects = $projectsQuery->get();
+
+            // Generate file Excel
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
 
@@ -111,7 +112,7 @@ class ProjectController extends Controller
             $sheet->setCellValue('E4', 'Sisa Waktu');
             $sheet->setCellValue('F4', 'Status Deadline');
 
-            // Styling Header
+            // Styling header
             $headerStyle = [
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0A0E32']],
@@ -171,81 +172,9 @@ class ProjectController extends Controller
 
 
 
-    public function filterLaporanProject(Request $request)
-    {
-        try {
 
-            $judul_proyek = $request->input('title');
-            $progress = $request->input('progress');
-            $statusDeadline = $request->input('status_deadline');
-            $sisaWaktu = $request->input('sisa_waktu');
-            $deadlineFrom = $request->input('deadline_from');
-            $deadlineTo = $request->input('deadline_to');
 
-            $projects = Projects::with(['task'])
-                ->where('pm_id', Auth::user()->user_id);
 
-            if ($judul_proyek) {
-                $projects = $projects->where('project_name', 'LIKE', '%' . $judul_proyek . '%');
-            }
-
-            $projects = $projects->get();
-
-            if ($progress !== null) {
-                $projects = $projects->filter(function ($project) use ($progress) {
-                    $totalTasks = $project->task->count();
-                    $doneTasks = $project->task->where('status_task', 'DONE')->count();
-                    $calculatedProgress = $totalTasks > 0 ? ($doneTasks / $totalTasks) * 100 : 0;
-
-                    return round($calculatedProgress) == $progress;
-                });
-            }
-
-            if ($statusDeadline) {
-                $projects = $projects->filter(function ($project) use ($statusDeadline) {
-                    $isLate = \Carbon\Carbon::parse($project->deadline)->isPast();
-                    return $statusDeadline === 'tepat waktu' ? !$isLate : $isLate;
-                });
-            }
-
-            if ($sisaWaktu !== null) {
-                $projects = $projects->filter(function ($project) use ($sisaWaktu) {
-                    $remainingDays = now()->diffInDays($project->deadline, false);
-                    return $remainingDays == $sisaWaktu;
-                });
-            }
-
-            if ($deadlineFrom || $deadlineTo) {
-                $projects = $projects->filter(function ($project) use ($deadlineFrom, $deadlineTo) {
-                    $deadline = Carbon::parse($project->deadline);
-
-                    if ($deadlineFrom && $deadlineTo) {
-                        return $deadline->between($deadlineFrom, $deadlineTo);
-                    }
-
-                    if ($deadlineFrom) {
-                        return $deadline->greaterThanOrEqualTo($deadlineFrom);
-                    }
-
-                    if ($deadlineTo) {
-                        return $deadline->lessThanOrEqualTo($deadlineTo);
-                    }
-
-                    return true;
-                });
-            }
-
-            return ResponseFormatter::success([
-                'total_filtered_projects' => $projects->count(),
-                'data_projects' => projectResource::collection($projects),
-            ], 'Filtered Projects Retrieved Successfully');
-        } catch (Exception $e) {
-            return ResponseFormatter::error([
-                'message' => 'Something went wrong',
-                'error' => $e->getMessage(),
-            ], 'Failed to filter projects', 500);
-        }
-    }
 
 
 
@@ -580,7 +509,7 @@ class ProjectController extends Controller
                     'per_page' => $project->perPage(),
                     'current_page' => $project->currentPage(),
                     'from' => $project->firstItem(),
-                    'links' => $project->linkCollection(),
+                    'links' => $this->linkCollection($project),
                     'to' => $project->lastItem(),
                     'next_page_url' => $project->nextPageUrl(),
                     'prev_page_url' => $project->previousPageUrl(),
@@ -666,6 +595,7 @@ class ProjectController extends Controller
                     'from' => $project->firstItem(),
                     'links' => $project->linkCollection(),
                     'to' => $project->lastItem(),
+                    'links' => $project->linkCollection(),
                     'next_page_url' => $project->nextPageUrl(),
                     'prev_page_url' => $project->previousPageUrl(),
                 ],

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreign('collaborator_id')->references('user_id')->on('users')->onDelete('cascade');
 
             $table->string('task_name');
-            $table->enum('priority_task',[1,2,3])->default(1);
+            $table->enum('priority_task',['RENDAH', 'SEDANG', 'TINGGI', 'URGENT'])->default('RENDAH');
             $table->enum('type_task',['MAJOR','MINOR']);
             $table->enum('status_task', ['PENDING', 'ONGOING', 'DONE'])->default('PENDING');
             $table->date('deadline')->nullable();

@@ -41,4 +41,11 @@ class Projects extends Model
     {
         return $this->hasMany(Tasks::class, 'project_id', 'project_id');
     }
+
+    protected $appends = ['status_deadline'];
+
+    public function getStatusDeadlineAttribute()
+    {
+        return $this->deadline > now() ? 'Tepat Waktu' : 'Terlambat';
+    }
 }
