@@ -386,12 +386,12 @@ class ProjectController extends Controller
                 ->find($id);
 
             return ResponseFormatter::success(new ProjectResource($project), 'Success Get Data');
-        // } catch (Exception $error) {
-        //     return ResponseFormatter::error([
-        //         'message' => 'Something went wrong',
-        //         'error' => $error,
-        //     ], 'Failed to process data', 500);
-        // }
+        } catch (Exception $error) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $error,
+            ], 'Failed to process data', 500);
+        }
     }
 
     /**

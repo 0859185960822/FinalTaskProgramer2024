@@ -79,25 +79,25 @@ class TasksController extends Controller
                 'task_name' => 'required|string|max:255',
                 'priority_task' => 'required|in:0,1,2,3',
                 'type_task' => 'required|in:MAJOR,MINOR',
-                // 'collaborator_id' => 'required|exists:users,user_id',
+                'collaborator_id' => 'required|exists:users,user_id',
                 'project_id' => 'required|exists:projects,project_id',
                 'deadline' => 'required|date'
             ]);
-            $exists = UsersHasTeam::where('project_id', $validated['project_id'])
-                ->where('users_id', $validated['collaborator_id'])
-                ->exists();
+            // $exists = UsersHasTeam::where('project_id', $validated['project_id'])
+            //     ->where('users_id', $validated['collaborator_id'])
+            //     ->exists();
 
-            // if (!$exists) {
-            //     return ResponseFormatter::error([
-            //         'error' => 'User belum terdaftar dalam project.',
-            //     ], 'Conflict', 409);
-            // }
+            // // if (!$exists) {
+            // //     return ResponseFormatter::error([
+            // //         'error' => 'User belum terdaftar dalam project.',
+            // //     ], 'Conflict', 409);
+            // // }
 
             $task = new Tasks();
             $task->task_name = $validated['task_name'];
             $task->priority_task = $validated['priority_task'];
             $task->type_task = $validated['type_task'];
-            $task->collaborator_id = $validated['collaborator_id'] ?? NULL;
+            $task->collaborator_id = $validated['collaborator_id'];
             $task->project_id = $validated['project_id'];
             $task->deadline = $validated['deadline'];
             $task->status_task = 'PENDING';
