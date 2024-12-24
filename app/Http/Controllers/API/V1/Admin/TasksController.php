@@ -374,6 +374,7 @@ class TasksController extends Controller
                     'per_page' => $task->perPage(),
                     'current_page' => $task->currentPage(),
                     'from' => $task->firstItem(),
+                    'links' => $task->linkCollection(),
                     'to' => $task->lastItem(),
                     'next_page_url' => $task->nextPageUrl(),
                     'prev_page_url' => $task->previousPageUrl(),
