@@ -22,7 +22,7 @@ class TaskSeeder extends Seeder
             'task_name'      => 'Testing Api',
             'type_task'      => 'MAJOR',
             'deadline'       => '2025-12-12',
-            'priority_task'  => 1,
+            'priority_task'  => 'RENDAH',
             'status_task'    => 'PENDING',
             'created_by'     => $user_id->user_id,
         ]);
