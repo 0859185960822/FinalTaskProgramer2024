@@ -57,6 +57,7 @@ class CommentController extends Controller
     public function store(Request $request, $task_id)
     {
         try {
+            // Cek apakah task_id ada di database
             $task = Tasks::find($task_id);
 
             if (!$task) {
@@ -65,16 +66,19 @@ class CommentController extends Controller
                 ], 'Conflict', 409);
             }
 
+            // Validasi input
             $validatedData = $request->validate([
                 'comment' => 'required|string',
             ]);
 
+            // Data untuk disimpan
             $data = [
                 'task_id' => $task_id,
                 'user_id' => Auth::user()->user_id,
                 'comment' => $validatedData['comment'],
             ];
 
+            // Simpan komentar
             $comment = Comment::create($data);
 
             return ResponseFormatter::success(
@@ -88,6 +92,7 @@ class CommentController extends Controller
             ], 'Failed to process data', 500);
         }
     }
+
 
 
     /**

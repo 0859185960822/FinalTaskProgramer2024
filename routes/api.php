@@ -103,8 +103,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/{task_id}', [TasksController::class, 'show'])->middleware('auth.api');
         Route::put('/{task_id}', [TasksController::class, 'edit'])->middleware('auth.api');
         Route::delete('/{task_id}', [TasksController::class, 'destroy'])->middleware('auth.api');
-        Route::post('/comment', [CommentController::class, 'store'])->middleware(['auth.api'])->name('getComment');
-        Route::get('/{task_id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('addComment');
+        Route::post('/{task_id}/comment', [CommentController::class, 'store'])->middleware(['auth.api'])->name('addComment');
+        Route::get('/{task_id}/comment', [CommentController::class, 'index'])->middleware(['auth.api'])->name('getComment');
         Route::post('/{task_id}/status-task', [TasksController::class, 'statusTask'])->middleware(['auth.api']);
     });
 

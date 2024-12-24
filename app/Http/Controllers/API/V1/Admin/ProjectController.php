@@ -35,219 +35,87 @@ class ProjectController extends Controller
      * @response array{data: ProjectResource[], meta: array{permissions: bool}}
      */
 
-    public function exportToExcel(Request $request)
+    public function exportToExcel()
     {
-        try {
-            $judul_proyek = $request->input('title');
-            $progress = $request->input('progress');
-            $statusDeadline = $request->input('status_deadline');
-            $sisaWaktu = $request->input('sisa_waktu');
-            $deadlineFrom = $request->input('deadline_from');
-            $deadlineTo = $request->input('deadline_to');
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-            // Mendapatkan data proyek dengan filter
-            $projects = Projects::with(['task'])
-                ->where('pm_id', Auth::user()->user_id);
+        // Header kolom
+        $sheet->setCellValue('A4', 'No');
+        $sheet->setCellValue('B4', 'Nama Proyek');
+        $sheet->setCellValue('C4', 'Progress %');
+        $sheet->setCellValue('D4', 'Tanggal Deadline');
+        $sheet->setCellValue('E4', 'Sisa Waktu');
+        $sheet->setCellValue('F4', 'Status Deadline');
 
-            if ($judul_proyek) {
-                $projects = $projects->where('project_name', 'LIKE', '%' . $judul_proyek . '%');
-            }
+        // Styling Header
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0A0E32']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ];
+        $sheet->getStyle('A4:F4')->applyFromArray($headerStyle);
 
-            $projects = $projects->get();
+        // Mendapatkan data proyek
+        $projects = Projects::all();
 
-            if ($progress !== null) {
-                $projects = $projects->filter(function ($project) use ($progress) {
-                    $totalTasks = $project->task->count();
-                    $doneTasks = $project->task->where('status_task', 'DONE')->count();
-                    $calculatedProgress = $totalTasks > 0 ? ($doneTasks / $totalTasks) * 100 : 0;
+        $row = 5;
+        $no = 1;
+        foreach ($projects as $project) {
+            $totalTasks = $project->task->count();
+            $doneTasks = $project->task->where('status_task', 'DONE')->count();
+            $progress = $totalTasks > 0 ? round(($doneTasks / $totalTasks) * 100) : 0;
+            $sisaWaktu = now()->diffInDays($project->deadline, false);
+            $statusDeadline = \Carbon\Carbon::parse($project->deadline)->isPast() ? 'Terlambat' : 'Tepat Waktu';
 
-                    return round($calculatedProgress) == $progress;
-                });
-            }
+            // Isi data proyek
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $project->project_name);
+            $sheet->setCellValue('C' . $row, $progress . '%');
+            $sheet->setCellValue('D' . $row, \Carbon\Carbon::parse($project->deadline)->format('d/m/Y'));
+            $sheet->setCellValue('E' . $row, $sisaWaktu . ' Hari');
+            $sheet->setCellValue('F' . $row, $statusDeadline);
 
-            if ($statusDeadline) {
-                $projects = $projects->filter(function ($project) use ($statusDeadline) {
-                    $isLate = \Carbon\Carbon::parse($project->deadline)->isPast();
-                    return $statusDeadline === 'tepat waktu' ? !$isLate : $isLate;
-                });
-            }
+            // Styling Sisa Waktu dan Status Deadline
+            $sisaWaktuStyle = ['font' => ['color' => ['rgb' => $sisaWaktu < 0 ? 'FF0000' : '000000']]];
+            $statusStyle = ['font' => ['color' => ['rgb' => $statusDeadline == 'Terlambat' ? 'FF0000' : '008000']]];
 
-            if ($sisaWaktu !== null) {
-                $projects = $projects->filter(function ($project) use ($sisaWaktu) {
-                    $remainingDays = now()->diffInDays($project->deadline, false);
-                    return $remainingDays == $sisaWaktu;
-                });
-            }
+            $sheet->getStyle('E' . $row)->applyFromArray($sisaWaktuStyle);
+            $sheet->getStyle('F' . $row)->applyFromArray($statusStyle);
 
-            if ($deadlineFrom || $deadlineTo) {
-                $projects = $projects->filter(function ($project) use ($deadlineFrom, $deadlineTo) {
-                    $deadline = Carbon::parse($project->deadline);
-
-                    if ($deadlineFrom && $deadlineTo) {
-                        return $deadline->between($deadlineFrom, $deadlineTo);
-                    }
-
-                    if ($deadlineFrom) {
-                        return $deadline->greaterThanOrEqualTo($deadlineFrom);
-                    }
-
-                    if ($deadlineTo) {
-                        return $deadline->lessThanOrEqualTo($deadlineTo);
-                    }
-
-                    return true;
-                });
-            }
-
-            // Generate Excel file
-            $spreadsheet = new Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
-
-            // Header kolom
-            $sheet->setCellValue('A4', 'No');
-            $sheet->setCellValue('B4', 'Nama Proyek');
-            $sheet->setCellValue('C4', 'Progress %');
-            $sheet->setCellValue('D4', 'Tanggal Deadline');
-            $sheet->setCellValue('E4', 'Sisa Waktu');
-            $sheet->setCellValue('F4', 'Status Deadline');
-
-            // Styling Header
-            $headerStyle = [
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0A0E32']],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
-            ];
-            $sheet->getStyle('A4:F4')->applyFromArray($headerStyle);
-
-            $row = 5;
-            $no = 1;
-            foreach ($projects as $project) {
-                $totalTasks = $project->task->count();
-                $doneTasks = $project->task->where('status_task', 'DONE')->count();
-                $progress = $totalTasks > 0 ? round(($doneTasks / $totalTasks) * 100) : 0;
-                $sisaWaktu = now()->diffInDays($project->deadline, false);
-                $statusDeadline = \Carbon\Carbon::parse($project->deadline)->isPast() ? 'Terlambat' : 'Tepat Waktu';
-
-                // Isi data proyek
-                $sheet->setCellValue('A' . $row, $no++);
-                $sheet->setCellValue('B' . $row, $project->project_name);
-                $sheet->setCellValue('C' . $row, $progress . '%');
-                $sheet->setCellValue('D' . $row, \Carbon\Carbon::parse($project->deadline)->format('d/m/Y'));
-                $sheet->setCellValue('E' . $row, $sisaWaktu . ' Hari');
-                $sheet->setCellValue('F' . $row, $statusDeadline);
-
-                $row++;
-            }
-
-            // Styling border
-            $sheet->getStyle('A5:F' . ($row - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-            $sheet->getStyle('A5:F' . ($row - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            // Atur lebar kolom
-            foreach (['A' => 5, 'B' => 30, 'C' => 15, 'D' => 20, 'E' => 15, 'F' => 20] as $col => $width) {
-                $sheet->getColumnDimension($col)->setWidth($width);
-            }
-
-            // Menambahkan judul
-            $sheet->mergeCells('A2:F2');
-            $sheet->setCellValue('A2', 'Laporan Project');
-            $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(16);
-            $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            // Download file
-            $writer = new Xlsx($spreadsheet);
-            $fileName = 'Laporan_Project_' . date('Ymd_His') . '.xlsx';
-
-            return response()->streamDownload(function () use ($writer) {
-                $writer->save('php://output');
-            }, $fileName, [
-                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            ]);
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            $row++;
         }
+
+        // Styling border
+        $sheet->getStyle('A5:F' . ($row - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('A5:F' . ($row - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Atur lebar kolom
+        foreach (['A' => 5, 'B' => 30, 'C' => 15, 'D' => 20, 'E' => 15, 'F' => 20] as $col => $width) {
+            $sheet->getColumnDimension($col)->setWidth($width);
+        }
+
+        // Menambahkan judul
+        $sheet->mergeCells('A2:F2');
+        $sheet->setCellValue('A2', 'Laporan Project');
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Download file
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'Laporan_Project_' . date('Ymd_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 
 
 
-
-
-    public function filterLaporanProject(Request $request)
-    {
-        try {
-
-            $judul_proyek = $request->input('title');
-            $progress = $request->input('progress');
-            $statusDeadline = $request->input('status_deadline');
-            $sisaWaktu = $request->input('sisa_waktu');
-            $deadlineFrom = $request->input('deadline_from');
-            $deadlineTo = $request->input('deadline_to');
-
-            $projects = Projects::with(['task'])
-                ->where('pm_id', Auth::user()->user_id);
-
-            if ($judul_proyek) {
-                $projects = $projects->where('project_name', 'LIKE', '%' . $judul_proyek . '%');
-            }
-
-            $projects = $projects->get();
-
-            if ($progress !== null) {
-                $projects = $projects->filter(function ($project) use ($progress) {
-                    $totalTasks = $project->task->count();
-                    $doneTasks = $project->task->where('status_task', 'DONE')->count();
-                    $calculatedProgress = $totalTasks > 0 ? ($doneTasks / $totalTasks) * 100 : 0;
-
-                    return round($calculatedProgress) == $progress;
-                });
-            }
-
-            if ($statusDeadline) {
-                $projects = $projects->filter(function ($project) use ($statusDeadline) {
-                    $isLate = \Carbon\Carbon::parse($project->deadline)->isPast();
-                    return $statusDeadline === 'tepat waktu' ? !$isLate : $isLate;
-                });
-            }
-
-            if ($sisaWaktu !== null) {
-                $projects = $projects->filter(function ($project) use ($sisaWaktu) {
-                    $remainingDays = now()->diffInDays($project->deadline, false);
-                    return $remainingDays == $sisaWaktu;
-                });
-            }
-
-            if ($deadlineFrom || $deadlineTo) {
-                $projects = $projects->filter(function ($project) use ($deadlineFrom, $deadlineTo) {
-                    $deadline = Carbon::parse($project->deadline);
-
-                    if ($deadlineFrom && $deadlineTo) {
-                        return $deadline->between($deadlineFrom, $deadlineTo);
-                    }
-
-                    if ($deadlineFrom) {
-                        return $deadline->greaterThanOrEqualTo($deadlineFrom);
-                    }
-
-                    if ($deadlineTo) {
-                        return $deadline->lessThanOrEqualTo($deadlineTo);
-                    }
-
-                    return true;
-                });
-            }
-
-            return ResponseFormatter::success([
-                'total_filtered_projects' => $projects->count(),
-                'data_projects' => projectResource::collection($projects),
-            ], 'Filtered Projects Retrieved Successfully');
-        } catch (Exception $e) {
-            return ResponseFormatter::error([
-                'message' => 'Something went wrong',
-                'error' => $e->getMessage(),
-            ], 'Failed to filter projects', 500);
-        }
-    }
+    
 
 
     public function index()
@@ -259,7 +127,7 @@ class ProjectController extends Controller
             $userRoles = Auth::user()->userRole->pluck('role_id'); // Sesuaikan dengan relasi role
             // dd($userRoles);
 
-            $projects = Projects::with(['projectManager', 'teamMembers', 'task']);
+            $projects = Projects::with(['projectManager', 'teamMembers','task']);
 
             // Jika user adalah Project Manager
             if ($userRoles->contains(1)) { // Asumsi role_id = 1 adalah Project Manager
@@ -274,7 +142,7 @@ class ProjectController extends Controller
             }
 
             $project = $projects->get();
-
+            
             $totalProject = $project->count();
             $onGoing = 0;
             $done = 0;
@@ -373,8 +241,8 @@ class ProjectController extends Controller
     {
         try {
             $project = Projects::with([
-                'projectManager',
-                'teamMembers',
+                'projectManager', 
+                'teamMembers', 
                 'task' => function ($query) {
                     // Filter task hanya jika user bukan Administrator
                     if (!Auth::user()->userRole->pluck('role_id')->contains(1)) {
@@ -383,7 +251,7 @@ class ProjectController extends Controller
                     }
                 }
             ])
-                ->find($id);
+            ->find($id);
 
             return ResponseFormatter::success(new ProjectResource($project), 'Success Get Data');
         } catch (Exception $error) {
@@ -433,7 +301,7 @@ class ProjectController extends Controller
 
                 // Update kolaborator jika ada data collaborator
                 $project_id = $data->project_id;
-
+                
                 if ($request->collaborator) {
                     $data_collaborator = json_decode($request->collaborator, true);
                     // Hapus kolaborator lama
