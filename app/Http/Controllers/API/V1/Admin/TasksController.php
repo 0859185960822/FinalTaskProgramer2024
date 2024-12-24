@@ -77,7 +77,7 @@ class TasksController extends Controller
         try {
             $validated = $request->validate([
                 'task_name' => 'required|string|max:255',
-                'priority_task' => 'required|in:0,1,2,3',
+                'priority_task' => 'required|in:URGENT,TINGGI,SEDANG,RENDAH',
                 'type_task' => 'required|in:MAJOR,MINOR',
                 'collaborator_id' => 'required|exists:users,user_id',
                 'project_id' => 'required|exists:projects,project_id',
@@ -226,7 +226,7 @@ class TasksController extends Controller
 
             $validated = $request->validate([
                 'task_name' => 'required|string|max:255',
-                'priority_task' => 'required|in:0,1,2,3',
+                'priority_task' => 'required|in:URGENT,TINGGI,SEDANG,RENDAH',
                 'type_task' => 'required|in:MAJOR,MINOR',
                 'collaborator_id' => 'required|exists:users,user_id',
                 'status_task' => 'nullable|in:PENDING,IN PROGRESS,DONE',
