@@ -27,22 +27,26 @@ class projectResource extends JsonResource
             $sisa_waktu = 'Deadline Terlewat';
         }
 
-        $deadline = '';
-        if ($this->deadline > Carbon::now()) {
-            $deadline = "Terlambat";
-        } else {
-            $deadline = "Tepat Waktu";
-        }
         // Format deadline dengan nama bulan
         $formattedDeadline = Carbon::parse($this->deadline)->translatedFormat('d F Y');
-
+        
         // Hitung progress_project
         $totalTasks = $this->task ? $this->task->count() : 0;
         $doneTasks = $this->task ? $this->task->where('status_task', 'DONE')->count() : 0;
         $onGoingTasks = $this->task ? $this->task->where('status_task', 'ONGOING')->count() : 0;
         $pendingTasks = $this->task ? $this->task->where('status_task', 'PENDING')->count() : 0;
-
+        
         $progress_project = $totalTasks > 0 ? round(($doneTasks / $totalTasks) * 100, 2) : 0;
+        $deadline = '';
+        if ($this->deadline > Carbon::now() && $progress_project == 100) {
+            $deadline = "Tepat Waktu";
+        } elseif ($this->deadline > Carbon::now()){
+            $deadline = "Tepat Waktu";
+        } elseif($this->deadline < Carbon::now() && $progress_project != 100) {
+            $deadline = "Terlambat";
+        } else {
+            $deadline = "Terlambat";
+        }
         
         return [
             'project_id' => $this->project_id,
