@@ -371,7 +371,7 @@ class ProjectController extends Controller
                     $dataToInsert = [];
                     foreach ($data_collaborator as $collaborator) {
                         $dataToInsert[] = [
-                            'users_id' => $collaborator['user_id'],
+                            'users_id' => $collaborator,
                             'project_id' => $project_id,
                             'created_at' => Carbon::now(),
                             'updated_at' => Carbon::now(),
@@ -390,8 +390,7 @@ class ProjectController extends Controller
             return ResponseFormatter::error([
                 'message' => 'Something went wrong',
                 'error' => $error,
-            ], 'Failed to process da
-            ta', 500);
+            ], 'Failed to process data', 500);
         }
     }
 
@@ -511,6 +510,7 @@ class ProjectController extends Controller
                     'from' => $project->firstItem(),
                     'links' => $this->linkCollection($project),
                     'to' => $project->lastItem(),
+                    'links' => $project->linkCollection(),
                     'next_page_url' => $project->nextPageUrl(),
                     'prev_page_url' => $project->previousPageUrl(),
                 ],
