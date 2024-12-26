@@ -144,7 +144,7 @@ class ProjectController extends Controller
                 $sisaWaktu = now()->diffInDays($project->deadline, false);
                 // $statusDeadline = \Carbon\Carbon::parse($project->deadline)->isPast() ? 'Terlambat' : 'Tepat Waktu';
                 $resource = new ProjectResource($project);
-                $statusDeadline = strtolower($resource->toArray(request())['status_deadline']);
+                $statusDeadline = $resource->toArray(request())['status_deadline'];
             
 
                 // Isi data proyek
