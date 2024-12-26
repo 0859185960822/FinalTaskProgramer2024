@@ -195,11 +195,12 @@ class ProjectController extends Controller
             // Filter berdasarkan status_deadline
             if ($statusDeadline) {
                 $projects = $projects->filter(function ($project) use ($statusDeadline) {
-                    $sisaWaktu = Carbon::now()->diffInDays(Carbon::parse($project->deadline), false);
-                    $statusDeadlineProject = $sisaWaktu < 0 ? 'Terlambat' : 'Tepat Waktu';
-
+                    // Ambil nilai status_deadline dari ProjectResource
+                    $resource = new ProjectResource($project);
+                    $statusDeadlineProject = strtolower($resource->toArray(request())['status_deadline']);
+            
                     // Cocokkan status_deadline (case-insensitive)
-                    return strtolower($statusDeadlineProject) === strtolower($statusDeadline);
+                    return $statusDeadlineProject === strtolower($statusDeadline);
                 });
             }
 
