@@ -57,15 +57,18 @@ class ProjectController extends Controller
                 $projectsQuery->whereRaw('LOWER(project_name) LIKE ?', ['%' . strtolower($judul_proyek) . '%']);
             }
 
-            // Filter berdasarkan status_deadline
-            if ($statusDeadline) {
-                $projectsQuery->where(function ($query) use ($statusDeadline) {
-                    $query->whereRaw('DATE(deadline) < NOW()')
-                        ->when($statusDeadline === 'tepat waktu', function ($query) {
-                            return $query->whereRaw('DATE(deadline) >= NOW()');
-                        });
-                });
-            }
+            // if ($statusDeadline) {
+            //     $projectsQuery->where(function ($query) use ($statusDeadline) {
+            //         // Ambil status_deadline menggunakan ProjectResource tanpa filter koleksi
+            //         $query->whereRaw("DATE(deadline) >= NOW()")
+            //               ->when(strtolower($statusDeadline) === 'tepat waktu', function ($query) {
+            //                   return $query->whereRaw("DATE(deadline) >= NOW()");
+            //               })
+            //               ->when(strtolower($statusDeadline) === 'terlambat', function ($query) {
+            //                   return $query->whereRaw("DATE(deadline) < NOW()");
+            //               });
+            //     });
+            // }
 
             // Filter berdasarkan progress
             if ($progress !== null) {
@@ -100,6 +103,17 @@ class ProjectController extends Controller
             // Ambil hasil dari query yang sudah difilter
             $projects = $projectsQuery->get();
 
+            if ($statusDeadline) {
+                $projects = $projects->filter(function ($project) use ($statusDeadline) {
+                    // Ambil nilai status_deadline menggunakan ProjectResource
+                    $resource = new ProjectResource($project);
+                    $statusDeadlineProject = strtolower($resource->toArray(request())['status_deadline']);
+                    
+                    // Cocokkan status_deadline dengan statusDeadline yang diberikan (case-insensitive)
+                    return $statusDeadlineProject === strtolower($statusDeadline);
+                });
+            }
+
             // Generate file Excel
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -128,7 +142,10 @@ class ProjectController extends Controller
                 $doneTasks = $project->task->where('status_task', 'DONE')->count();
                 $progress = $totalTasks > 0 ? round(($doneTasks / $totalTasks) * 100) : 0;
                 $sisaWaktu = now()->diffInDays($project->deadline, false);
-                $statusDeadline = \Carbon\Carbon::parse($project->deadline)->isPast() ? 'Terlambat' : 'Tepat Waktu';
+                // $statusDeadline = \Carbon\Carbon::parse($project->deadline)->isPast() ? 'Terlambat' : 'Tepat Waktu';
+                $resource = new ProjectResource($project);
+                $statusDeadline = strtolower($resource->toArray(request())['status_deadline']);
+            
 
                 // Isi data proyek
                 $sheet->setCellValue('A' . $row, $no++);
@@ -256,13 +273,6 @@ class ProjectController extends Controller
             ], 'Failed to filter projects', 500);
         }
     }
-
-
-
-
-
-
-
 
     public function index()
     {
